@@ -1,2 +1,11 @@
 # Config settings for local testing go here
 show_drafts: true
+
+safe: false
+plugins:
+  - jekyll-local-theme
+
+remote_theme: "" # No remote theme when testing locally
+local_theme: xyz
+
+# vim: set et ts=2:

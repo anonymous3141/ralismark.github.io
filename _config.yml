@@ -1,43 +1,10 @@
 #
-# site settings
+# Post settings
 #
-title: ralismark
-description: Discussions from all depths of computer science
-
 excerpt_separator: <!--more-->
 
-#
-# build setting
-#
-localhost: false
-markdown: kramdown
-safe: true
-
 kramdown:
-  # Use Github-flavoured markdown (e.g. triple backtick code)
-  input: GFM
-  syntax_highlighter: rouge
   header_offset: 1 # h1 becomes h2 (h1 is title)
-
-  syntax_highlighter_opts:
-    span:
-      line_numbers: false
-    block:
-      line_numbers: true
-      start_line: 1
-
-# Sass generated css
-sass:
-  style: expanded
-
-# Atom feed config
-feed:
-  excerpt_only: true
-
-# Use the following plug-ins
-plugins:
-  - jekyll-sitemap # Create a sitemap
-  - jekyll-feed # Create an Atom feed
 
 # Exclude these files from production
 exclude:
@@ -56,5 +23,10 @@ defaults:
       modules:
         # hlink: true
         math: true
+
+# Use remote theme in prod
+plugins:
+  - jekyll-remote-theme
+remote_theme: ralismark/ralismark.github.io@theme
 
 # vim: set et ts=2:
