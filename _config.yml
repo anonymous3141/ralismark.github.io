@@ -4,12 +4,9 @@
 title: ralismark
 description: Discussions from all depths of computer science
 
-excerpt_separator: <!--more-->
-
 #
 # build setting
 #
-localhost: false
 markdown: kramdown
 safe: true
 
@@ -17,7 +14,6 @@ kramdown:
   # Use Github-flavoured markdown (e.g. triple backtick code)
   input: GFM
   syntax_highlighter: rouge
-  header_offset: 1 # h1 becomes h2 (h1 is title)
 
   syntax_highlighter_opts:
     span:
@@ -38,23 +34,5 @@ feed:
 plugins:
   - jekyll-sitemap # Create a sitemap
   - jekyll-feed # Create an Atom feed
-
-# Exclude these files from production
-exclude:
-  - LICENSE
-  - README.md
-  - Dockerfile
-  - Makefile
-
-# Default values for page frontmatter
-defaults:
-  -
-    scope:
-      path: "" # everything
-      type: "posts"
-    values:
-      modules:
-        # hlink: true
-        math: true
 
 # vim: set et ts=2:
