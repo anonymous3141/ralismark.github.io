@@ -1,6 +1,7 @@
 #
 # Post settings
 #
+title: ralismark
 excerpt_separator: <!--more-->
 
 kramdown:
