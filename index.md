@@ -15,6 +15,10 @@ Right now, the most complete part is [my blog](/posts.html), where I posts stuff
 - [maths](/2019/04/05/speed-of-light.html)
 - as well as the occasional [interactive post](/2019/05/24/fenwick-tree.html).
 
+# Projects
+
+{% include trees.html %}
+
 # Elsewhere on the internet
 
 I'm called ralismark on all of these places:

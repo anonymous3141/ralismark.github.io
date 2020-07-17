@@ -1,0 +1,33 @@
+config:
+  colors:
+    active: forestgreen
+    complete: yellowgreen
+    wip: orange
+projects:
+
+  - name: blog
+    x: 90%
+    y: 90%
+    link: https://www.ralismark.xyz
+    status: active
+    description: It's a blog yo
+
+  - name: Basalt Bashers (original)
+    x: 10%
+    y: 10%
+    link: https://github.com/ralismark/sd2
+    status: complete
+    description: A game I made as my SDD HSC project. Written in C++
+
+  - name: Basalt Bashers (web port)
+    x: 17%
+    y: 20%
+    link: https://www.ralismark.xyz/webgames/basalt-bashers
+    status: complete
+    description: A remake of Basalt Bashers in JavaScript & Canvas
+
+  - name: stuff
+    x: 100%
+    y: 100%
+    status: wip
+    description: stuff
