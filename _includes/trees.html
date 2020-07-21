@@ -11,7 +11,8 @@
 	</p>
 </div>
 
-{% for project in site.data.trees.projects %}
+{% assign projects_sorted = site.data.trees.projects | sort: "y" %}
+{% for project in projects_sorted %}
 
 <div class="project">
 
@@ -42,7 +43,7 @@
 		status: <span class="status">{{ project.status }}</span>
 	</p>
 	<p>
-	{{ project.description }}
+	{{ project.description | markdownify }}
 	</p>
 </div>
 
