@@ -19,6 +19,10 @@ Right now, the most complete part is [my blog](/posts.html), where I posts stuff
 
 {% include trees.html %}
 
+Inspired by [this][stevens-blog].
+
+[stevens-blog]: http://htmlpreview.github.io/?https://github.com/acenturyandabit/acenturyandabit.github.io/blob/68a24395b008dde778b6576c805a4346a35f06b7/index.html
+
 # Elsewhere on the internet
 
 I'm called ralismark on all of these places:
