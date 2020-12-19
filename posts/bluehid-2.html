@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>BlueHID Details, part 2 - WTF is a HID descriptor?! - ralismark</title>
+
+<!--[if lt IE 9]>
+	<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv='X-UA-Compatible' content='IE=edge'>
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link rel="canonical" href="/posts/bluehid-2">
+<meta name="description" content="Figuring out how to make a useful HID descriptor">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/logo-32.png">
+
+<link type="application/atom+xml" rel="alternate" href="/feed.xml" title="ralismark" />
+
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+
+<!-- experiment: indieweb -->
+<link rel="webmention" href="https://webmention.io/www.ralismark.xyz/webmention" />
+<link rel="pingback" href="https://webmention.io/www.ralismark.xyz/xmlrpc" />
+
+	</head>
+	<body>
+		<header id="site-nav" class="full-width text-inverted">
+	<nav class="content-width flex-distribute">
+		<a id="navbar-root" href="/">ralismark</a>
+
+		
+
+		<ul id="navbar-pages" class="list-inline my-0">
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li class="navbar-page">
+				<a class="navbar-link" href="/posts">
+					Blog
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+		</ul>
+	</nav>
+</header>
+
+
+		<main class="content-width my-2 h-entry">
+			<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/posts/bluehid-1">&laquo; BlueHID Details, part 1 - Oreo Hacks</a>
+	
+
+	
+		<a class="next" href="/posts/nice-01-knapsack">A nice subset-sum solution &raquo;</a>
+	
+</nav>
+
+
+<header class="post-meta fenced-b mb-1 text-centre bleed">
+	<h1 id="post-title" class="p-name">BlueHID Details, part 2 - WTF is a HID descriptor?!</h1>
+	<p class="p-summary"><em>
+		Figuring out how to make a useful HID descriptor
+	</em></p>
+	<ul class="li-flat">
+		<li>
+		<time datetime="2019-01-07T00:00:00-06:00" class="dt-published">
+			<a class="u-url" href="/posts/bluehid-2">
+			07 January 2019
+			</a>
+		</time>
+		</li>
+
+		<li>
+			
+			<abbr title="1358 total words">7 mins to read</abbr>
+		</li>
+
+		
+		
+		<li id="post-tags">
+			<span id="post-tag-label">Tags:</span>
+			
+				<a class="p-category badge" href="/tags#android">android</a>
+			
+		</li>
+		
+	</p>
+</header>
+
+<article class="post-content e-content bounded">
+	<p>Now that we’ve got our Bluetooth HID support up (either through part 1 or by being on P), it’s time to start using the API. At the beginning it’s like another Bluetooth profile, but things start get much worse (if you’re new to the HID specification) as you get deep into the implementation.</p>
+
+<!--more-->
+
+<p>As always, the final code is available on github at <a href="https://github.com/ralismark/bluehid">ralismark/bluehid</a>.</p>
+
+<h2 id="getting-ready-for-hid"><a href="#getting-ready-for-hid">Getting ready for HID</a></h2>
+
+<p>We need to first set up Bluetooth and get the appropriate profile, as you would for any profile. Initially, you need to get the Bluetooth adapter and enable Bluetooth if it’s not already. Then, you need to get a paired device, either through discovery or from existing paired devices (whatever is appropriate). This is described well and in detail in the <a href="https://developer.android.com/guide/topics/connectivity/bluetooth">Bluetooth Overview</a>, so I won’t repeat what’s there.</p>
+
+<p>Afterwards, you need to get the proxy - <code class="language-plaintext highlighter-rouge">BluetoothHidDevice</code> or <code class="language-plaintext highlighter-rouge">BluetoothInputHost</code> (depending on API level) - to be able to communicate with the HID service we previously enabled. This is done with <a href="https://developer.android.com/reference/android/bluetooth/BluetoothAdapter#getProfileProxy(android.content.Context,%20android.bluetooth.BluetoothProfile.ServiceListener,%20int)"><code class="language-plaintext highlighter-rouge">BluetoothAdapter.getProfileProxy()</code></a>.</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+</pre></td><td class="rouge-code"><pre><span class="kd">private</span> <span class="nc">BluetoothAdapter</span> <span class="n">mBtAdapter</span><span class="o">;</span> <span class="c1">// obtained as you normally would</span>
+<span class="kd">private</span> <span class="nc">BluetoothInputHost</span> <span class="n">mBtHidDevice</span><span class="o">;</span>
+
+<span class="o">...</span>
+
+<span class="n">mBtAdapter</span><span class="o">.</span><span class="na">getProfileProxy</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="k">new</span> <span class="nc">BluetoothProfile</span><span class="o">.</span><span class="na">ServiceListener</span><span class="o">()</span> <span class="o">{</span>
+	<span class="nd">@Override</span>
+	<span class="kd">public</span> <span class="kt">void</span> <span class="nf">onServiceConnected</span><span class="o">(</span><span class="kt">int</span> <span class="n">profile</span><span class="o">,</span> <span class="nc">BluetoothProfile</span> <span class="n">proxy</span><span class="o">)</span> <span class="o">{</span>
+		<span class="k">if</span> <span class="o">(</span><span class="n">profile</span> <span class="o">==</span> <span class="nc">BluetoothProfile</span><span class="o">.</span><span class="na">INPUT_HOST</span><span class="o">)</span> <span class="o">{</span>
+			<span class="nc">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="no">TAG</span><span class="o">,</span> <span class="s">"Got HID device"</span><span class="o">);</span>
+			<span class="n">mBtHidDevice</span> <span class="o">=</span> <span class="o">(</span><span class="nc">BluetoothInputHost</span><span class="o">)</span> <span class="n">proxy</span><span class="o">;</span>
+
+			<span class="c1">// see next section</span>
+			<span class="n">registerApp</span><span class="o">();</span>
+		<span class="o">}</span>
+	<span class="o">}</span>
+
+	<span class="nd">@Override</span>
+	<span class="kd">public</span> <span class="kt">void</span> <span class="nf">onServiceDisconnected</span><span class="o">(</span><span class="kt">int</span> <span class="n">profile</span><span class="o">)</span> <span class="o">{</span>
+		<span class="k">if</span> <span class="o">(</span><span class="n">profile</span> <span class="o">==</span> <span class="nc">BluetoothProfile</span><span class="o">.</span><span class="na">INPUT_HOST</span><span class="o">)</span> <span class="o">{</span>
+			<span class="nc">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="no">TAG</span><span class="o">,</span> <span class="s">"Lost HID device"</span><span class="o">);</span>
+		<span class="o">}</span>
+	<span class="o">}</span>
+<span class="o">},</span> <span class="nc">BluetoothProfile</span><span class="o">.</span><span class="na">INPUT_HOST</span><span class="o">);</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>This call essentially requests the proxy and saves it. I’ve extracted the code to setup Bluetooth HID into <code class="language-plaintext highlighter-rouge">registerApp()</code>, which we’ll see next.</p>
+
+<p>If this is never called, it probably means that the service is not enabled. Check the previous post on how to do this in Oreo. I don’t have experience with P, so I can’t help you if you have this issue there.</p>
+
+<h2 id="into-hid-hell"><a href="#into-hid-hell">Into HID Hell</a></h2>
+
+<p>After this, if you look around the documentation for <code class="language-plaintext highlighter-rouge">BluetoothHidDevice</code>, you’ll see that you need to register your app. You reach <a href="https://developer.android.com/reference/android/bluetooth/BluetoothHidDevice#registerApp(android.bluetooth.BluetoothHidDeviceAppSdpSettings,%20android.bluetooth.BluetoothHidDeviceAppQosSettings,%20android.bluetooth.BluetoothHidDeviceAppQosSettings,%20java.util.concurrent.Executor,%20android.bluetooth.BluetoothHidDevice.Callback)"><code class="language-plaintext highlighter-rouge">registerApp()</code></a>, then recoil in horror at the signature (\s):</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre><span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">registerApp</span> <span class="o">(</span><span class="nc">BluetoothHidDeviceAppSdpSettings</span> <span class="n">sdp</span><span class="o">,</span>
+                <span class="nc">BluetoothHidDeviceAppQosSettings</span> <span class="n">inQos</span><span class="o">,</span>
+                <span class="nc">BluetoothHidDeviceAppQosSettings</span> <span class="n">outQos</span><span class="o">,</span>
+                <span class="nc">Executor</span> <span class="n">executor</span><span class="o">,</span>
+                <span class="nc">BluetoothHidDevice</span><span class="o">.</span><span class="na">Callback</span> <span class="n">callback</span><span class="o">)</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>Fortunately, after looking at the description, we see we can ignore 2 of these parameters - <code class="language-plaintext highlighter-rouge">inQos</code> and <code class="language-plaintext highlighter-rouge">outQos</code> - and just set them to <code class="language-plaintext highlighter-rouge">null</code>. Another - <code class="language-plaintext highlighter-rouge">executor</code> - is also not present in Oreo, leaving us with <code class="language-plaintext highlighter-rouge">sdp</code> and <code class="language-plaintext highlighter-rouge">callback</code>. Diving into <code class="language-plaintext highlighter-rouge">BluetoothHidDeviceAppSdpSettings</code> (what a mouthful), we see several arguments in its constructor, including a link to <a href="https://www.usb.org/sites/default/files/documents/hid1_11.pdf">USB Device Class Definition for HIDs - firmware specification</a>. Read this well and get to understand the required sections, since it’s essential to everything from here on out.</p>
+
+<p>Now, back to the constructor:</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre><span class="kd">public</span> <span class="nf">BluetoothHidDeviceAppSdpSettings</span> <span class="o">(</span><span class="nc">String</span> <span class="n">name</span><span class="o">,</span>
+                <span class="nc">String</span> <span class="n">description</span><span class="o">,</span>
+                <span class="nc">String</span> <span class="n">provider</span><span class="o">,</span>
+                <span class="kt">byte</span> <span class="n">subclass</span><span class="o">,</span>
+                <span class="kt">byte</span><span class="o">[]</span> <span class="n">descriptors</span><span class="o">)</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">name</code>, <code class="language-plaintext highlighter-rouge">description</code> and <code class="language-plaintext highlighter-rouge">provider</code> are easy - you can put pretty much any string for these. <code class="language-plaintext highlighter-rouge">subclass</code> isn’t too bad either after looking at the spec - there’s only two: none and boot device. We simply specify none (a single <code class="language-plaintext highlighter-rouge">0x00</code> byte) and move on, reaching <code class="language-plaintext highlighter-rouge">descriptor</code> and become confused.</p>
+
+<p>This is the hell of HID hell. <sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote">1</a></sup></p>
+
+<h2 id="through-hid-hell"><a href="#through-hid-hell">Through HID Hell</a></h2>
+
+<p>The <code class="language-plaintext highlighter-rouge">descriptor</code> is made up of the main HID descriptor, followed (literally concatenated) by any other descriptors. This is the layout of the main descriptor, with unnecessary parts removed (we only need one extra descriptor, and fields for further ones are optional).</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Part</th>
+      <th>Byte(s)</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">bLength</code></td>
+      <td>0</td>
+      <td>Length of main descriptor (not including other descriptor) - <code class="language-plaintext highlighter-rouge">0x09</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">bDescriptorType</code></td>
+      <td>1</td>
+      <td>HID descriptor type - <code class="language-plaintext highlighter-rouge">0x21</code> <sup id="fnref:2" role="doc-noteref"><a href="#fn:2" class="footnote">2</a></sup></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">bcdHID</code></td>
+      <td>2-3</td>
+      <td>HID specification version, in little endian binary coded decimal - <code class="language-plaintext highlighter-rouge">0x11 0x01</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">bCountryCode</code></td>
+      <td>4</td>
+      <td>Country code - <code class="language-plaintext highlighter-rouge">0x00</code> for not localised (only relevant for keyboards)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">bNumDescriptors</code></td>
+      <td>5</td>
+      <td>Number of extra descriptors - <code class="language-plaintext highlighter-rouge">0x01</code> (the report descriptor)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">bDescriptorType</code></td>
+      <td>6</td>
+      <td>Report type <code class="language-plaintext highlighter-rouge">0x22</code> <sup id="fnref:2:1" role="doc-noteref"><a href="#fn:2" class="footnote">2</a></sup></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">wDescriptorLength</code></td>
+      <td>7-8</td>
+      <td>Length of the report descriptor type, in little endian</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>It turns out, many of these values will always be the same. After this block in <code class="language-plaintext highlighter-rouge">descriptor</code>, you append the report descriptor, which describes the “device interface” - what inputs it has (e.g. buttons, joysticks, magic carpet controls<sup id="fnref:3" role="doc-noteref"><a href="#fn:3" class="footnote">3</a></sup>), what data it can receive (e.g. force feedback, which is extremely complicated to implement), and what other features it supports. The majority of the HID specification describes this and it somewhat complex representation. Fortunately, there’s <a href="https://www.usb.org/document-library/hid-descriptor-tool">HID descriptor tool</a> to generate this, and plenty of resources online on the content of the actual descriptor, so I won’t go into detail (again). One helpful site is this <a href="https://eleccelerator.com/tutorial-about-usb-hid-report-descriptors/">tutorial about USB HID report descriptors</a>, which provides an example for a device with a joystick and a gamepad with 20 buttons. Use the descriptor tool to generate the bytes making up the descriptor from the individual items.</p>
+
+<p>Note that there can be multiple reports described, each with a different report ID (this will matter later), but we only have a single. Take the size of this report, and fill in <code class="language-plaintext highlighter-rouge">wDescriptorLength</code> in the main descriptor. Concatenate the two, and you get the <code class="language-plaintext highlighter-rouge">descriptor</code> argument:</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+</pre></td><td class="rouge-code"><pre><span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">byte</span><span class="o">[]</span> <span class="n">descriptor</span> <span class="o">=</span> <span class="k">new</span> <span class="kt">byte</span><span class="o">[]</span> <span class="o">{</span>
+	<span class="c1">// HID descriptor</span>
+	<span class="mh">0x09</span><span class="o">,</span> <span class="c1">// bLength</span>
+	<span class="mh">0x21</span><span class="o">,</span> <span class="c1">// bDescriptorType</span>
+	<span class="mh">0x11</span><span class="o">,</span> <span class="mh">0x01</span><span class="o">,</span> <span class="c1">// bcdHID</span>
+	<span class="mh">0x00</span><span class="o">,</span> <span class="c1">// bCountryCode</span>
+	<span class="mh">0x01</span><span class="o">,</span> <span class="c1">// bNumDescriptors</span>
+	<span class="mh">0x22</span><span class="o">,</span> <span class="c1">// bDescriptorType</span>
+	<span class="mh">0x30</span><span class="o">,</span> <span class="mh">0x00</span><span class="o">,</span> <span class="c1">// wDescriptorLength (48 in decimal)</span>
+
+	<span class="c1">// Report descriptor - 4 buttons, 1 X/Y joystick</span>
+	<span class="mh">0x05</span><span class="o">,</span> <span class="mh">0x01</span><span class="o">,</span>        <span class="c1">// USAGE_PAGE (Generic Desktop)</span>
+	<span class="mh">0x09</span><span class="o">,</span> <span class="mh">0x05</span><span class="o">,</span>        <span class="c1">// USAGE (Game Pad)</span>
+	<span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0xa1</span><span class="o">,</span> <span class="mh">0x01</span><span class="o">,</span> <span class="c1">// COLLECTION (Application)</span>
+	<span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0xa1</span><span class="o">,</span> <span class="mh">0x00</span><span class="o">,</span> <span class="c1">//   COLLECTION (Physical)</span>
+	<span class="mh">0x05</span><span class="o">,</span> <span class="mh">0x09</span><span class="o">,</span>        <span class="c1">//     USAGE_PAGE (Button)</span>
+	<span class="mh">0x19</span><span class="o">,</span> <span class="mh">0x01</span><span class="o">,</span>        <span class="c1">//     USAGE_MINIMUM (Button 1)</span>
+	<span class="mh">0x29</span><span class="o">,</span> <span class="mh">0x04</span><span class="o">,</span>        <span class="c1">//     USAGE_MAXIMUM (Button 4)</span>
+	<span class="mh">0x15</span><span class="o">,</span> <span class="mh">0x00</span><span class="o">,</span>        <span class="c1">//     LOGICAL_MINIMUM (0)</span>
+	<span class="mh">0x25</span><span class="o">,</span> <span class="mh">0x01</span><span class="o">,</span>        <span class="c1">//     LOGICAL_MAXIMUM (1)</span>
+	<span class="mh">0x75</span><span class="o">,</span> <span class="mh">0x01</span><span class="o">,</span>        <span class="c1">//     REPORT_SIZE (1)</span>
+	<span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0x95</span><span class="o">,</span> <span class="mh">0x04</span><span class="o">,</span> <span class="c1">//     REPORT_COUNT (4)</span>
+	<span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0x81</span><span class="o">,</span> <span class="mh">0x02</span><span class="o">,</span> <span class="c1">//     INPUT (Data,Var,Abs)</span>
+	<span class="mh">0x75</span><span class="o">,</span> <span class="mh">0x04</span><span class="o">,</span>        <span class="c1">//     REPORT_SIZE (4)</span>
+	<span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0x95</span><span class="o">,</span> <span class="mh">0x01</span><span class="o">,</span> <span class="c1">//     REPORT_COUNT (1)</span>
+	<span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0x81</span><span class="o">,</span> <span class="mh">0x03</span><span class="o">,</span> <span class="c1">//     INPUT (Cnst,Var,Abs)</span>
+	<span class="mh">0x05</span><span class="o">,</span> <span class="mh">0x01</span><span class="o">,</span>        <span class="c1">//     USAGE_PAGE (Generic Desktop)</span>
+	<span class="mh">0x09</span><span class="o">,</span> <span class="mh">0x30</span><span class="o">,</span>        <span class="c1">//     USAGE (X)</span>
+	<span class="mh">0x09</span><span class="o">,</span> <span class="mh">0x31</span><span class="o">,</span>        <span class="c1">//     USAGE (Y)</span>
+	<span class="mh">0x15</span><span class="o">,</span> <span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0x81</span><span class="o">,</span> <span class="c1">//     LOGICAL_MINIMUM (-127)</span>
+	<span class="mh">0x25</span><span class="o">,</span> <span class="mh">0x7f</span><span class="o">,</span>        <span class="c1">//     LOGICAL_MAXIMUM (127)</span>
+	<span class="mh">0x75</span><span class="o">,</span> <span class="mh">0x08</span><span class="o">,</span>        <span class="c1">//     REPORT_SIZE (8)</span>
+	<span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0x95</span><span class="o">,</span> <span class="mh">0x02</span><span class="o">,</span> <span class="c1">//     REPORT_COUNT (2)</span>
+	<span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0x81</span><span class="o">,</span> <span class="mh">0x02</span><span class="o">,</span> <span class="c1">//     INPUT (Data,Var,Abs)</span>
+	<span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0xc0</span><span class="o">,</span>       <span class="c1">//   END_COLLECTION</span>
+	<span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0xc0</span>        <span class="c1">// END_COLLECTION</span>
+<span class="o">};</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<blockquote>
+  <p>Since the descriptor describes the format of each report (a update on the inputs), I’ll talk more about what the descriptor specifies in the next post where we communicate with the host.</p>
+</blockquote>
+
+<p>This is the final argument of the <code class="language-plaintext highlighter-rouge">BluetoothHidDeviceAppSdpSettings</code> constructor, filling in the <code class="language-plaintext highlighter-rouge">sdp</code> argument of <code class="language-plaintext highlighter-rouge">registerApp()</code>.</p>
+
+<h2 id="a-brief-break"><a href="#a-brief-break">A Brief Break</a></h2>
+
+<p>This leaves one argument left - <code class="language-plaintext highlighter-rouge">callback</code>. This is fortunately relatively straightforward. It turns out that <code class="language-plaintext highlighter-rouge">BluetoothHidDevice.Callback</code> actually has no abstract methods, and the ones handling requests (e.g. <code class="language-plaintext highlighter-rouge">getReport</code>) are not required (from my experience), so <em>technically</em> you can just not do anything. However, it’s helpful to implement <code class="language-plaintext highlighter-rouge">onConnectionStateChanged</code> to be able to know when the connection is ready and when it has ended.</p>
+
+<p>And with this we are able to finally register our app and connect our device:</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+</pre></td><td class="rouge-code"><pre><span class="nc">BluetoothHidDeviceAppSdpSettings</span> <span class="n">sdp</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">BluetoothHidDeviceAppSdpSettings</span><span class="o">(</span>
+	<span class="s">"BlueHID"</span><span class="o">,</span>
+	<span class="s">"Android HID hackery"</span><span class="o">,</span>
+	<span class="s">"Android"</span><span class="o">,</span>
+	<span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0x00</span><span class="o">,</span>
+	<span class="n">descriptor</span>
+<span class="o">);</span>
+
+<span class="n">mBtHidDevice</span><span class="o">.</span><span class="na">registerApp</span><span class="o">(</span><span class="n">sdp</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="k">new</span> <span class="nc">BluetoothHidDeviceCallback</span><span class="o">()</span> <span class="o">{</span>
+	<span class="o">...</span> <span class="c1">// omitted</span>
+<span class="o">});</span>
+
+<span class="n">mBtHidDevice</span><span class="o">.</span><span class="na">connect</span><span class="o">(</span><span class="n">device</span><span class="o">);</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>This is where I’ll end this post, leaving the actual communication to the next one. There’s not much left, and the hardest part of this entire process (working out the descriptor) is now past us, so the final part of this series shouldn’t be too hard.</p>
+
+<blockquote>
+  <p>Final code is available on github at <a href="https://github.com/ralismark/bluehid">ralismark/bluehid</a>.</p>
+</blockquote>
+
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:1" role="doc-endnote">
+      <p>I’m calling this HID hell for a variety of reasons:</p>
+
+      <ul>
+        <li>It took me a while to understand this, so it was “hell” personally for me. For instance, just determining <code class="language-plaintext highlighter-rouge">bDescriptorType</code> took a me few hours.</li>
+        <li>The documentation is sometimes unclear.</li>
+        <li>It appears that no-one has used BluetoothHidDevice yet.</li>
+      </ul>
+      <p><a href="#fnref:1" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:2" role="doc-endnote">
+      <p>See top of page 49 of the specification. <a href="#fnref:2" class="reversefootnote" role="doc-backlink">&#8617;</a> <a href="#fnref:2:1" class="reversefootnote" role="doc-backlink">&#8617;<sup>2</sup></a></p>
+    </li>
+    <li id="fn:3" role="doc-endnote">
+      <p><a href="https://www.usb.org/sites/default/files/documents/hut1_12v2.pdf">HID Usage Tables</a>, page 42 <a href="#fnref:3" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+  </ol>
+</div>
+
+</article>
+
+<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/posts/bluehid-1">&laquo; BlueHID Details, part 1 - Oreo Hacks</a>
+	
+
+	
+		<a class="next" href="/posts/nice-01-knapsack">A nice subset-sum solution &raquo;</a>
+	
+</nav>
+
+
+		</main>
+
+		<div id="site-footer" class="content-width text-centre">
+		<ul class="li-flat mt-0">
+			<li><a href="/everything">everything</a></li>
+			<li><a href="/booklist">reading list</a></li>
+		</ul>
+		All work licensed under <b>CC BY-SA 4.0</b> unless otherwise stated.
+		<br>
+		This site is <a href="https://github.com/ralismark/ralismark.github.io">open source</a>!
+</div>
+
+	</body>
+</html>

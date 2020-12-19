@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>Interactive Canvas - ralismark</title>
+
+<!--[if lt IE 9]>
+	<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv='X-UA-Compatible' content='IE=edge'>
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link rel="canonical" href="/interactives/canvas">
+<meta name="description" content="HTML canvas which is redrawn as you code">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/logo-32.png">
+
+<link type="application/atom+xml" rel="alternate" href="/feed.xml" title="ralismark" />
+
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+
+<!-- experiment: indieweb -->
+<link rel="webmention" href="https://webmention.io/www.ralismark.xyz/webmention" />
+<link rel="pingback" href="https://webmention.io/www.ralismark.xyz/xmlrpc" />
+
+	</head>
+	<body>
+		<header id="site-nav" class="full-width text-inverted">
+	<nav class="content-width flex-distribute">
+		<a id="navbar-root" href="/">ralismark</a>
+
+		
+
+		<ul id="navbar-pages" class="list-inline my-0">
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li class="navbar-page">
+				<a class="navbar-link" href="/posts">
+					Blog
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+		</ul>
+	</nav>
+</header>
+
+
+		<main class="content-width my-2 h-entry">
+			<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/interactives/librtc-js">&laquo; librtc.js - A WebRTC connection helper</a>
+	
+
+	
+		<a class="next" href="/interactives/blockquote-style">Which blockquote looks better &raquo;</a>
+	
+</nav>
+
+
+<header class="post-meta fenced-b mb-1 text-centre bleed">
+	<h1 id="post-title" class="p-name">Interactive Canvas</h1>
+	<p class="p-summary"><em>
+		HTML canvas which is redrawn as you code
+	</em></p>
+	<ul class="li-flat">
+		<li>
+		<time datetime="2020-04-19T00:00:00-05:00" class="dt-published">
+			<a class="u-url" href="/interactives/canvas">
+			19 April 2020
+			</a>
+		</time>
+		</li>
+
+		<li>
+			
+			<abbr title="118 total words">1 min to read</abbr>
+		</li>
+
+		
+		
+		<li id="post-tags">
+			<span id="post-tag-label">Tags:</span>
+			
+				<a class="p-category badge" href="/tags#web">web</a>
+			
+		</li>
+		
+	</p>
+</header>
+
+<article class="post-content e-content bounded">
+	<p>
+	It's an interactive canvas! Type code in the textbox and it'll be automatically be run on the canvas. The sample code demonstrates what you can do. You also have access to these variables:
+</p>
+
+<ul>
+	<li>canvas - the canvas DOM element</li>
+	<li>ctx - the 2d canvas context</li>
+	<li>width - the width of the canvas</li>
+	<li>height - the height of the canvas</li>
+	<li>drawPath(p, n) - draw a path using n points using the function p</li>
+</ul>
+
+<hr>
+
+<style>
+textarea { width: 500px; height: 300px; }
+textarea.good { border: 1px solid rgba(0, 255, 0, 0.4); }
+textarea.bad { border: 1px solid rgba(255, 0, 0, 0.4); }
+canvas { border: 1px solid rgba(127,127,127,0.3); }
+.hcenter { display: flex; flex-direction: column; align-items: center; }
+</style>
+
+<div class="hcenter">
+<canvas width="500" height="500"></canvas>
+<textarea
+	spellcheck="false"
+	oninput="update()">
+let f = [2,3,5];
+
+let tau = 2*Math.PI;
+let s = (s, v) => [s*v[0], s*v[1]];
+let e3 = (a,b,c) => [a - b/2 - c/2, (c-b) * Math.sqrt(3)/2];
+let P = p => s(100, e3(Math.sin(tau*p*f[0]), Math.sin(tau*p*f[1]), Math.sin(tau*p*f[2])));
+
+ctx.lineWidth = 5;
+ctx.lineCap = "round"
+drawPath(P, 1000);
+</textarea>
+</p>
+
+<script>
+function update() {
+	let textarea = document.querySelector("textarea");
+	let script = textarea.value;
+	let canvas = document.querySelector("canvas");
+	let ctx = canvas.getContext("2d")
+
+	let env = {
+		ctx: ctx,
+		canvas: canvas,
+		width: canvas.width,
+		height: canvas.height,
+		drawPath: (P, N) => {
+			for(let i = 1; i <= N; ++i) {
+				ctx.beginPath();
+				ctx.moveTo(...P((i-1)/N));
+				ctx.lineTo(...P(i/N));
+				ctx.strokeStyle = "hsl(" + (i/N*360) + "deg, 50%, 50%)";
+				ctx.stroke();
+			}
+		}
+		};
+
+	let f = Function(...Object.keys(env), "'use strict';" + script);
+
+	textarea.classList.remove("good", "bad");
+
+	try {
+		ctx.restore(); ctx.save();
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		ctx.beginPath();
+		ctx.restore(); ctx.save();
+
+		ctx.setTransform(1, 0, 0, 1, canvas.width/2, canvas.height/2);
+		f(...Object.values(env));
+
+		textarea.classList.add("good");
+	} catch(err) {
+		textarea.classList.add("bad");
+		throw err;
+	}
+}
+setTimeout(update, 100);
+</script>
+
+</article>
+
+<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/interactives/librtc-js">&laquo; librtc.js - A WebRTC connection helper</a>
+	
+
+	
+		<a class="next" href="/interactives/blockquote-style">Which blockquote looks better &raquo;</a>
+	
+</nav>
+
+
+		</main>
+
+		<div id="site-footer" class="content-width text-centre">
+		<ul class="li-flat mt-0">
+			<li><a href="/everything">everything</a></li>
+			<li><a href="/booklist">reading list</a></li>
+		</ul>
+		All work licensed under <b>CC BY-SA 4.0</b> unless otherwise stated.
+		<br>
+		This site is <a href="https://github.com/ralismark/ralismark.github.io">open source</a>!
+</div>
+
+	</body>
+</html>

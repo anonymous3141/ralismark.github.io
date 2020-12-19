@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>BlueHID Details, part 3 - Finally, controls! - ralismark</title>
+
+<!--[if lt IE 9]>
+	<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv='X-UA-Compatible' content='IE=edge'>
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link rel="canonical" href="/posts/bluehid-3">
+<meta name="description" content="Finally sending inputs over bluetooth">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/logo-32.png">
+
+<link type="application/atom+xml" rel="alternate" href="/feed.xml" title="ralismark" />
+
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+
+<!-- experiment: indieweb -->
+<link rel="webmention" href="https://webmention.io/www.ralismark.xyz/webmention" />
+<link rel="pingback" href="https://webmention.io/www.ralismark.xyz/xmlrpc" />
+
+	</head>
+	<body>
+		<header id="site-nav" class="full-width text-inverted">
+	<nav class="content-width flex-distribute">
+		<a id="navbar-root" href="/">ralismark</a>
+
+		
+
+		<ul id="navbar-pages" class="list-inline my-0">
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li class="navbar-page">
+				<a class="navbar-link" href="/posts">
+					Blog
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+		</ul>
+	</nav>
+</header>
+
+
+		<main class="content-width my-2 h-entry">
+			<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/posts/nice-01-knapsack">&laquo; A nice subset-sum solution</a>
+	
+
+	
+		<a class="next" href="/posts/speed-of-light">A simple "derivation" of the speed of light &raquo;</a>
+	
+</nav>
+
+
+<header class="post-meta fenced-b mb-1 text-centre bleed">
+	<h1 id="post-title" class="p-name">BlueHID Details, part 3 - Finally, controls!</h1>
+	<p class="p-summary"><em>
+		Finally sending inputs over bluetooth
+	</em></p>
+	<ul class="li-flat">
+		<li>
+		<time datetime="2019-01-13T00:00:00-06:00" class="dt-published">
+			<a class="u-url" href="/posts/bluehid-3">
+			13 January 2019
+			</a>
+		</time>
+		</li>
+
+		<li>
+			
+			<abbr title="673 total words">4 mins to read</abbr>
+		</li>
+
+		
+		
+		<li id="post-tags">
+			<span id="post-tag-label">Tags:</span>
+			
+				<a class="p-category badge" href="/tags#android">android</a>
+			
+		</li>
+		
+	</p>
+</header>
+
+<article class="post-content e-content bounded">
+	<p>After part 1 and 2, we’ve got everything (finally) set up implement a Bluetoooth HID device. All we need to do now is to send the control inputs to the connected device, and it’s much simpler than setting things up.</p>
+
+<!--more-->
+
+<p><a href="https://github.com/ralismark/bluehid"><em>Code on github</em></a>.</p>
+
+<p>I’m going to skip past the code required to get inputs from the user, such as buttons, joysticks, etc. as it will probably be specific to your purpose. Look at the source code if you want to know more about how it’s implemented in BlueHID.</p>
+
+<h2 id="sending-inputs"><a href="#sending-inputs">Sending inputs</a></h2>
+
+<p>The relevant API for sending a report is <a href="https://developer.android.com/reference/android/bluetooth/BluetoothHidDevice.html#sendReport(android.bluetooth.BluetoothDevice,%20int,%20byte[])"><code class="language-plaintext highlighter-rouge">BluetoothHidDevice.sendReport</code></a>, which takes the <code class="language-plaintext highlighter-rouge">BluetoothDevice</code> you’re sending the inputs (which should have been previously connected), the report id (0 if you don’t use a report id), and the actual report data. The first two arguments are quite simple, and the report data should follow your report descriptor - which shouldn’t be too complicated if you’ve looked into HID report descriptors e.g. in the tutorial I linked in the previous part. Still, I’ll go through the one used in BlueHID.</p>
+
+<p>If you’re familiar with HID reports, this is the end! Send a report when your input change, and things should work out.</p>
+
+<h2 id="a-bluehid-example"><a href="#a-bluehid-example">A BlueHID example</a></h2>
+
+<p>I’ll explain how this works using the BlueHID report descriptor (even though I said I wouldn’t in the previous part). Most of this doesn’t use actual HID terminology, so don’t rely on it for that.</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="rouge-code"><pre><span class="mh">0x05</span><span class="o">,</span> <span class="mh">0x01</span><span class="o">,</span>        <span class="c1">// USAGE_PAGE (Generic Desktop)</span>
+<span class="mh">0x09</span><span class="o">,</span> <span class="mh">0x05</span><span class="o">,</span>        <span class="c1">// USAGE (Game Pad)</span>
+<span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0xa1</span><span class="o">,</span> <span class="mh">0x01</span><span class="o">,</span> <span class="c1">// COLLECTION (Application)</span>
+<span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0xa1</span><span class="o">,</span> <span class="mh">0x00</span><span class="o">,</span> <span class="c1">//   COLLECTION (Physical)</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>This is essentially boilerplate to declare that the device is a gamepad:</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre></td><td class="rouge-code"><pre><span class="mh">0x05</span><span class="o">,</span> <span class="mh">0x09</span><span class="o">,</span>        <span class="c1">//     USAGE_PAGE (Button)</span>
+<span class="mh">0x19</span><span class="o">,</span> <span class="mh">0x01</span><span class="o">,</span>        <span class="c1">//     USAGE_MINIMUM (Button 1)</span>
+<span class="mh">0x29</span><span class="o">,</span> <span class="mh">0x04</span><span class="o">,</span>        <span class="c1">//     USAGE_MAXIMUM (Button 4)</span>
+<span class="mh">0x15</span><span class="o">,</span> <span class="mh">0x00</span><span class="o">,</span>        <span class="c1">//     LOGICAL_MINIMUM (0)</span>
+<span class="mh">0x25</span><span class="o">,</span> <span class="mh">0x01</span><span class="o">,</span>        <span class="c1">//     LOGICAL_MAXIMUM (1)</span>
+<span class="mh">0x75</span><span class="o">,</span> <span class="mh">0x01</span><span class="o">,</span>        <span class="c1">//     REPORT_SIZE (1)</span>
+<span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0x95</span><span class="o">,</span> <span class="mh">0x04</span><span class="o">,</span> <span class="c1">//     REPORT_COUNT (4)</span>
+<span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0x81</span><span class="o">,</span> <span class="mh">0x02</span><span class="o">,</span> <span class="c1">//     INPUT (Data,Var,Abs)</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>This describes a set of 4 buttons (indicated by the usage minimum/maximum). Each can either be pressed (a value of 1) or not (value of 0), giving us the logical maximum/minimum. Each button takes up 1 bit (report size), and there are 4 of them (report count). The input statement ends this block.</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td><td class="rouge-code"><pre><span class="mh">0x75</span><span class="o">,</span> <span class="mh">0x04</span><span class="o">,</span>        <span class="c1">//     REPORT_SIZE (4)</span>
+<span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0x95</span><span class="o">,</span> <span class="mh">0x01</span><span class="o">,</span> <span class="c1">//     REPORT_COUNT (1)</span>
+<span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0x81</span><span class="o">,</span> <span class="mh">0x03</span><span class="o">,</span> <span class="c1">//     INPUT (Cnst,Var,Abs)</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>This is padding (constant) of 4 bits, ensuring that subsequent values are aligned on byte boundaries.</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre></td><td class="rouge-code"><pre><span class="mh">0x05</span><span class="o">,</span> <span class="mh">0x01</span><span class="o">,</span>        <span class="c1">//     USAGE_PAGE (Generic Desktop)</span>
+<span class="mh">0x09</span><span class="o">,</span> <span class="mh">0x30</span><span class="o">,</span>        <span class="c1">//     USAGE (X)</span>
+<span class="mh">0x09</span><span class="o">,</span> <span class="mh">0x31</span><span class="o">,</span>        <span class="c1">//     USAGE (Y)</span>
+<span class="mh">0x15</span><span class="o">,</span> <span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0x81</span><span class="o">,</span> <span class="c1">//     LOGICAL_MINIMUM (-127)</span>
+<span class="mh">0x25</span><span class="o">,</span> <span class="mh">0x7f</span><span class="o">,</span>        <span class="c1">//     LOGICAL_MAXIMUM (127)</span>
+<span class="mh">0x75</span><span class="o">,</span> <span class="mh">0x08</span><span class="o">,</span>        <span class="c1">//     REPORT_SIZE (8)</span>
+<span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0x95</span><span class="o">,</span> <span class="mh">0x02</span><span class="o">,</span> <span class="c1">//     REPORT_COUNT (2)</span>
+<span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0x81</span><span class="o">,</span> <span class="mh">0x02</span><span class="o">,</span> <span class="c1">//     INPUT (Data,Var,Abs)</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>This declares a joystick with a position described by X and Y coordinates. Each value is stored in 8 bits, and there are 2 of them. These vary between -127 and 127 (the maximum in a byte <sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote">1</a></sup>).</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre><span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0xc0</span><span class="o">,</span>       <span class="c1">//   END_COLLECTION</span>
+<span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="mh">0xc0</span>        <span class="c1">// END_COLLECTION</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>This finishes the descriptor.</p>
+
+<p>From this, we can determine the format of the report:</p>
+
+<table class="text-centre" style="table-layout: fixed">
+<thead>
+  <tr><th>bit</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th></th></tr>
+</thead>
+<tbody>
+  <tr><td>Byte 0</td><td class="boxed" colspan="4"><em>padding</em></td><td class="boxed">b4</td><td class="boxed">b3</td><td class="boxed">b2</td><td class="boxed">b1</td><td>(buttons)</td></tr>
+  <tr><td>Byte 1</td><td class="boxed" colspan="8">X Axis</td><td></td></tr>
+  <tr><td>Byte 2</td><td class="boxed" colspan="8">Y Axis</td><td></td></tr>
+</tbody>
+</table>
+
+<p>If we fill in the report according to this format (see code for how this can be done), and send it with <code class="language-plaintext highlighter-rouge">sendReport()</code> whenever the input change, it’ll work.</p>
+
+<h2 id="bluetooth-issues"><a href="#bluetooth-issues">Bluetooth Issues</a></h2>
+
+<p>After this, the HID controller should work. However, in practice it may not. I’ve experienced significant variation in latency - on some days, it works well, but on others, it just doesn’t. I’m not sure if this is due to the app or the Bluetooth implementation on Android, but I’m pretty sure the app is okay. You might want to try messing with QoS (the <code class="language-plaintext highlighter-rouge">null</code> parameters from before), but beyond that, I don’t know.</p>
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:1" role="doc-endnote">
+      <p>Yes, technically we can have -128 as a possible value, but excluding it makes the bounds symmetric. This is also what’s used in many example descriptors. <a href="#fnref:1" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+  </ol>
+</div>
+
+</article>
+
+<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/posts/nice-01-knapsack">&laquo; A nice subset-sum solution</a>
+	
+
+	
+		<a class="next" href="/posts/speed-of-light">A simple "derivation" of the speed of light &raquo;</a>
+	
+</nav>
+
+
+		</main>
+
+		<div id="site-footer" class="content-width text-centre">
+		<ul class="li-flat mt-0">
+			<li><a href="/everything">everything</a></li>
+			<li><a href="/booklist">reading list</a></li>
+		</ul>
+		All work licensed under <b>CC BY-SA 4.0</b> unless otherwise stated.
+		<br>
+		This site is <a href="https://github.com/ralismark/ralismark.github.io">open source</a>!
+</div>
+
+	</body>
+</html>

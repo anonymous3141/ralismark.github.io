@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>Git Emergency Procedures - Cleaning things up - ralismark</title>
+
+<!--[if lt IE 9]>
+	<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv='X-UA-Compatible' content='IE=edge'>
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link rel="canonical" href="/posts/git-ep-cleanup">
+<meta name="description" content="Resetting the repo to its inital state &amp; deleting extra files">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/logo-32.png">
+
+<link type="application/atom+xml" rel="alternate" href="/feed.xml" title="ralismark" />
+
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+
+<!-- experiment: indieweb -->
+<link rel="webmention" href="https://webmention.io/www.ralismark.xyz/webmention" />
+<link rel="pingback" href="https://webmention.io/www.ralismark.xyz/xmlrpc" />
+
+	</head>
+	<body>
+		<header id="site-nav" class="full-width text-inverted">
+	<nav class="content-width flex-distribute">
+		<a id="navbar-root" href="/">ralismark</a>
+
+		
+
+		<ul id="navbar-pages" class="list-inline my-0">
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li class="navbar-page">
+				<a class="navbar-link" href="/posts">
+					Blog
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+		</ul>
+	</nav>
+</header>
+
+
+		<main class="content-width my-2 h-entry">
+			<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/posts/git-ep-deleted-ref">&laquo; Git Emergency Procedures - Recovering deleted refs</a>
+	
+
+	
+		<a class="next" href="/posts/table-mode">Emulating table mode on Casio fx-82AU (and variants) &raquo;</a>
+	
+</nav>
+
+
+<header class="post-meta fenced-b mb-1 text-centre bleed">
+	<h1 id="post-title" class="p-name">Git Emergency Procedures - Cleaning things up</h1>
+	<p class="p-summary"><em>
+		Resetting the repo to its inital state & deleting extra files
+	</em></p>
+	<ul class="li-flat">
+		<li>
+		<time datetime="2017-12-19T00:00:00-06:00" class="dt-published">
+			<a class="u-url" href="/posts/git-ep-cleanup">
+			19 December 2017
+			</a>
+		</time>
+		</li>
+
+		<li>
+			
+			<abbr title="538 total words">3 mins to read</abbr>
+		</li>
+
+		
+		
+		<li id="post-tags">
+			<span id="post-tag-label">Tags:</span>
+			
+				<a class="p-category badge" href="/tags#git">git</a>
+			
+		</li>
+		
+	</p>
+</header>
+
+<article class="post-content e-content bounded">
+	<p>When working on a repo, you may want to reset the repository to the initial
+state when you cloned it. This is more involved than you may think.</p>
+
+<!--more-->
+
+<p>While this isn’t exactly an emergency, it’s still something useful to know. I’ve
+often cloned a large project, made modifications, then had to undo all of them.
+Compiled products, generated files and other mess would also need to be removed,
+but it’s very difficult to find when hidden by <code class="language-plaintext highlighter-rouge">.gitignore</code>.</p>
+
+<p>For this, I’m assuming you want to reset absolutely everything you’ve done. If
+you want to save things, copy them outside the repo before wiping everything.</p>
+
+<h2 id="tracked-files"><a href="#tracked-files">Tracked files</a></h2>
+
+<p>Reverting all tracked files is pretty simple:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>git reset --hard HEAD
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>This resets the working tree (file system contents) and the index (staged files)
+to the current commit, clearing all changes.</p>
+
+<p>However, this misses both files ignore by <code class="language-plaintext highlighter-rouge">.gitignore</code> and those that are just
+plain untracked. These are usually more common than modified files, especially
+when you’re just building a project.</p>
+
+<h2 id="actually-cleaning"><a href="#actually-cleaning">Actually cleaning</a></h2>
+
+<p>Fortunately, there exists a command to do just this - <a href="https://git-scm.com/docs/git-clean"><code class="language-plaintext highlighter-rouge">git clean</code></a>! As its
+man page helpfully states:</p>
+
+<blockquote>
+  <p>Cleans the working tree by recursively removing files that are not under version
+control, starting from the current directory.</p>
+</blockquote>
+
+<p>This command allows us to wipe everything else from the repo. However, if you
+run <code class="language-plaintext highlighter-rouge">git clean</code> without any options, you’ll see that it misses a lot of stuff.
+To truly remove everything, you need this:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>git clean -x -d -f -f
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>This has three flags, which can be combined into <code class="language-plaintext highlighter-rouge">-xdff</code>:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">-x</code>: Ignore the <code class="language-plaintext highlighter-rouge">.gitignore</code>, deleting all untracked files</li>
+  <li><code class="language-plaintext highlighter-rouge">-d</code>: Delete directories as well as files</li>
+  <li><code class="language-plaintext highlighter-rouge">-ff</code>: (yes, two <sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote">1</a></sup> f’s here) Delete even sub-repositories</li>
+</ul>
+
+<p>Running this command will dutifully, irrevocably delete all untracked files
+under the current directory. Make sure you’re in the repo root to clean
+everything. If you want to see what you’re doing, replace the <code class="language-plaintext highlighter-rouge">-f</code>s with a
+single <code class="language-plaintext highlighter-rouge">-n</code> to show what would’ve been deleted. For more useful options it’s
+best to see the <a href="https://git-scm.com/docs/git-clean">man page</a>.</p>
+
+<p>However, you still need to run <code class="language-plaintext highlighter-rouge">git reset --hard HEAD</code> to reset modified files,
+as <code class="language-plaintext highlighter-rouge">git clean</code> only works on files not under version control.</p>
+
+<h2 id="not-everything"><a href="#not-everything">Not everything</a></h2>
+
+<p>The above covers most destructive use cases, but once in a while you’ll need to
+save a few things from complete destruction.</p>
+
+<p>If there’s changes you’ve made to tracked files, but you want to delete
+everything else (e.g. for a clean build), just run the <code class="language-plaintext highlighter-rouge">clean</code> command. To keep
+new files but reset existing ones, <code class="language-plaintext highlighter-rouge">reset</code> only.</p>
+
+<p>For more fine grained control, it depends on if the file in tracked or not.
+<code class="language-plaintext highlighter-rouge">git clean</code> has the <code class="language-plaintext highlighter-rouge">-e</code> option which takes a pattern (like those in
+<code class="language-plaintext highlighter-rouge">.gitignore</code>) to skip certain files. This is respected over <code class="language-plaintext highlighter-rouge">-x</code>. Tracked files
+can be reset with <code class="language-plaintext highlighter-rouge">git checkout -- &lt;pathspec&gt;</code> for files and
+<code class="language-plaintext highlighter-rouge">git checkout -p -- &lt;pathspec&gt;</code> for individual patches of a file.</p>
+
+<hr />
+
+<p>If you want to learn more about any command described here (they all have many
+options not described here), check out their corresponding docs/man pages.</p>
+
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:1" role="doc-endnote">
+
+      <p>If the user has <code class="language-plaintext highlighter-rouge">clean.requireForce</code> set, a single <code class="language-plaintext highlighter-rouge">-f</code> is always required
+to delete things. However, two are always needed (independent of config
+options) to delete sub-repositories. <a href="#fnref:1" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+  </ol>
+</div>
+
+</article>
+
+<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/posts/git-ep-deleted-ref">&laquo; Git Emergency Procedures - Recovering deleted refs</a>
+	
+
+	
+		<a class="next" href="/posts/table-mode">Emulating table mode on Casio fx-82AU (and variants) &raquo;</a>
+	
+</nav>
+
+
+		</main>
+
+		<div id="site-footer" class="content-width text-centre">
+		<ul class="li-flat mt-0">
+			<li><a href="/everything">everything</a></li>
+			<li><a href="/booklist">reading list</a></li>
+		</ul>
+		All work licensed under <b>CC BY-SA 4.0</b> unless otherwise stated.
+		<br>
+		This site is <a href="https://github.com/ralismark/ralismark.github.io">open source</a>!
+</div>
+
+	</body>
+</html>

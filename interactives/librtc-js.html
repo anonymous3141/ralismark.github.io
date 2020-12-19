@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>librtc.js - A WebRTC connection helper - ralismark</title>
+
+<!--[if lt IE 9]>
+	<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv='X-UA-Compatible' content='IE=edge'>
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link rel="canonical" href="/interactives/librtc-js">
+<meta name="description" content="A minimal wrapper around WebRTC to make connecting easier">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/logo-32.png">
+
+<link type="application/atom+xml" rel="alternate" href="/feed.xml" title="ralismark" />
+
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+
+<!-- experiment: indieweb -->
+<link rel="webmention" href="https://webmention.io/www.ralismark.xyz/webmention" />
+<link rel="pingback" href="https://webmention.io/www.ralismark.xyz/xmlrpc" />
+
+	</head>
+	<body>
+		<header id="site-nav" class="full-width text-inverted">
+	<nav class="content-width flex-distribute">
+		<a id="navbar-root" href="/">ralismark</a>
+
+		
+
+		<ul id="navbar-pages" class="list-inline my-0">
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li class="navbar-page">
+				<a class="navbar-link" href="/posts">
+					Blog
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+		</ul>
+	</nav>
+</header>
+
+
+		<main class="content-width my-2 h-entry">
+			<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/interactives/timeshare">&laquo; Timeshare</a>
+	
+
+	
+		<a class="next" href="/interactives/canvas">Interactive Canvas &raquo;</a>
+	
+</nav>
+
+
+<header class="post-meta fenced-b mb-1 text-centre bleed">
+	<h1 id="post-title" class="p-name">librtc.js - A WebRTC connection helper</h1>
+	<p class="p-summary"><em>
+		A minimal wrapper around WebRTC to make connecting easier
+	</em></p>
+	<ul class="li-flat">
+		<li>
+		<time datetime="2020-04-13T00:00:00-05:00" class="dt-published">
+			<a class="u-url" href="/interactives/librtc-js">
+			13 April 2020
+			</a>
+		</time>
+		</li>
+
+		<li>
+			
+			<abbr title="298 total words">2 mins to read</abbr>
+		</li>
+
+		
+		
+		<li id="post-tags">
+			<span id="post-tag-label">Tags:</span>
+			
+				<a class="p-category badge" href="/tags#web">web</a>
+			
+		</li>
+		
+	</p>
+</header>
+
+<article class="post-content e-content bounded">
+	<p>A few years ago I messed around with WebRTC, and managed to do peer-to-peer communication via data channels. However, this endeavour didn’t go anywhere. I’m revisited what I found back then and packaged it up into a simple library.</p>
+
+<!--more-->
+
+<p>You can find the library and its documentation <a href="https://gist.github.com/ralismark/5f4588ae7313a728212adda4f868a3b8">in a github gist</a>. I didn’t feel it was long enough to warrant a repo, especially considering I likely won’t change much. To use in your site, you can add this to your website – it’s hosted on <a href="https://raw.githack.com/">raw.githack.com</a><sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote">1</a></sup>.</p>
+
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"https://gistcdn.githack.com/ralismark/5f4588ae7313a728212adda4f868a3b8/raw/41dddce14a6870df76d6cba633d5b01c9c8142c2/rtclib.js"</span><span class="nt">&gt;&lt;/script&gt;</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>This library requires ES6 – in particular, the classes feature. Use Babel if you need support for older browsers.</p>
+
+<p>The main benefit of this library is the ease of establishing a connection, requiring just 3 method calls for the actual handshake:</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre></td><td class="rouge-code"><pre><span class="kd">let</span> <span class="nx">alice</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RTC</span><span class="p">.</span><span class="nx">Host</span><span class="p">(</span><span class="nx">config</span><span class="p">);</span>
+<span class="kd">let</span> <span class="nx">bob</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RTC</span><span class="p">.</span><span class="nx">Client</span><span class="p">(</span><span class="nx">config</span><span class="p">);</span> <span class="c1">// Normally, this is on a different device</span>
+
+<span class="kd">let</span> <span class="nx">offer</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">alice</span><span class="p">.</span><span class="nx">offer</span><span class="p">();</span>
+<span class="c1">// send offer to bob...</span>
+<span class="kd">let</span> <span class="nx">reply</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">bob</span><span class="p">.</span><span class="nx">answer</span><span class="p">(</span><span class="nx">offer</span><span class="p">);</span>
+<span class="c1">// send reply back to alice... beware of timeout in real situations</span>
+<span class="nx">alice</span><span class="p">.</span><span class="nx">accept</span><span class="p">(</span><span class="nx">reply</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>Last time I messed around with WebRTC, I managed to compress the SDP in the offer the roughly a third of the original size by discarding unneeded information. However, that was quite a hack, and you can see similar efforts <a href="https://webrtchacks.com/the-minimum-viable-sdp/">in this post</a>.</p>
+
+<hr />
+
+<p>And here’s a sample where you can test this handshaking. Check the console and the <a href="https://github.com/ralismark/ralismark.github.io/blob/master/_interactives/2020-04-13-librtc-js.md">source code for this post</a> for more details.</p>
+
+<script src="https://gistcdn.githack.com/ralismark/5f4588ae7313a728212adda4f868a3b8/raw/41dddce14a6870df76d6cba633d5b01c9c8142c2/rtclib.js"></script>
+
+<p><button onclick="connect()">Connect for me</button></p>
+
+<div style="display: flex">
+	<div id="host" style="flex-grow: 1; width: 0">
+		<h2>Alice, the host (<span id="state">new</span>)</h2>
+		<div>
+			<p>Offer</p>
+			<textarea id="ta-offer"></textarea>
+		</div>
+		<hr />
+		<div>
+			<p>Put answer (from Bob) here</p>
+			<textarea id="ta-answer"></textarea>
+		</div>
+		<button onclick="pc1_input()">Accept answer</button>
+	</div>
+	<div id="client" style="flex-grow: 1; width: 0">
+		<h2>Bob, the client (<span id="state">new</span>)</h2>
+		<div>
+			<p>Put offer (from Alice) here</p>
+			<textarea id="ta-offer"></textarea>
+		</div>
+		<button onclick="pc2_input()">Generate Answer</button>
+		<hr />
+		<div>
+			<p>Answer</p>
+			<textarea id="ta-answer"></textarea>
+		</div>
+	</div>
+</div>
+
+<script>
+let $ = q => document.querySelector(q);
+
+const stun_config = { "iceServers": [ {"urls":  "stun:stun.l.google.com:19305"} ] }
+
+console.log("---\nwindow.a is a RTC.Host for Alice\nwindow.b is a RTC.Client for Bob\n---");
+
+let a = new RTC.Host(stun_config);
+a.ready.then(() => console.log("ready: Alice"));
+a.onstate(state => {
+	$("#host #state").innerText = state;
+	console.log("state: Alice is", state);
+});
+
+let b = new RTC.Client(stun_config);
+b.ready.then(() => console.log("ready: Bob"));
+b.onstate(state => {
+	$("#client #state").innerText = state;
+	console.log("state: Bob is", state);
+});
+
+async function startup() {
+	let offer = await a.offer();
+	console.log("connect: Alice generated offer");
+	$("#host #ta-offer").value = JSON.stringify(offer);
+}
+
+async function pc1_input() {
+	let answer = JSON.parse($("#host #ta-answer").value);
+	console.log("connect: Alice got answer");
+	await a.accept(answer);
+}
+
+async function pc2_input() {
+	let offer = JSON.parse($("#client #ta-offer").value);
+	console.log("connect: Bob got offer");
+	let answer = await b.answer(offer);
+	console.log("connect: Bob generated response");
+	$("#client #ta-answer").value = JSON.stringify(answer);
+}
+
+async function connect() {
+	await a.accept(await b.answer(await a.offer()));
+}
+
+startup();
+</script>
+
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:1" role="doc-endnote">
+      <p>You can’t directly include a gist as a script, so you need something which serves the files using something like raw.githack.com <a href="#fnref:1" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+  </ol>
+</div>
+
+</article>
+
+<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/interactives/timeshare">&laquo; Timeshare</a>
+	
+
+	
+		<a class="next" href="/interactives/canvas">Interactive Canvas &raquo;</a>
+	
+</nav>
+
+
+		</main>
+
+		<div id="site-footer" class="content-width text-centre">
+		<ul class="li-flat mt-0">
+			<li><a href="/everything">everything</a></li>
+			<li><a href="/booklist">reading list</a></li>
+		</ul>
+		All work licensed under <b>CC BY-SA 4.0</b> unless otherwise stated.
+		<br>
+		This site is <a href="https://github.com/ralismark/ralismark.github.io">open source</a>!
+</div>
+
+	</body>
+</html>

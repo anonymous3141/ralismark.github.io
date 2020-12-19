@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>Fenwick Trees - ralismark</title>
+
+<!--[if lt IE 9]>
+	<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv='X-UA-Compatible' content='IE=edge'>
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link rel="canonical" href="/interactives/fenwick-tree">
+<meta name="description" content="Visualising the structure of a fenwick tree">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/logo-32.png">
+
+<link type="application/atom+xml" rel="alternate" href="/feed.xml" title="ralismark" />
+
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+
+<!-- experiment: indieweb -->
+<link rel="webmention" href="https://webmention.io/www.ralismark.xyz/webmention" />
+<link rel="pingback" href="https://webmention.io/www.ralismark.xyz/xmlrpc" />
+
+	</head>
+	<body>
+		<header id="site-nav" class="full-width text-inverted">
+	<nav class="content-width flex-distribute">
+		<a id="navbar-root" href="/">ralismark</a>
+
+		
+
+		<ul id="navbar-pages" class="list-inline my-0">
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li class="navbar-page">
+				<a class="navbar-link" href="/posts">
+					Blog
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+		</ul>
+	</nav>
+</header>
+
+
+		<main class="content-width my-2 h-entry">
+			<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/interactives/imgtools">&laquo; Image Tool</a>
+	
+
+	
+		<a class="next" href="/interactives/timeshare">Timeshare &raquo;</a>
+	
+</nav>
+
+
+<header class="post-meta fenced-b mb-1 text-centre bleed">
+	<h1 id="post-title" class="p-name">Fenwick Trees</h1>
+	<p class="p-summary"><em>
+		Visualising the structure of a fenwick tree
+	</em></p>
+	<ul class="li-flat">
+		<li>
+		<time datetime="2019-05-24T00:00:00-05:00" class="dt-published">
+			<a class="u-url" href="/interactives/fenwick-tree">
+			24 May 2019
+			</a>
+		</time>
+		</li>
+
+		<li>
+			
+			<abbr title="100 total words">1 min to read</abbr>
+		</li>
+
+		
+		
+		<li id="post-tags">
+			<span id="post-tag-label">Tags:</span>
+			
+				<a class="p-category badge" href="/tags#informatics">informatics</a>
+			
+		</li>
+		
+	</p>
+</header>
+
+<article class="post-content e-content bounded">
+	<p>
+Fenwick trees are a lesser-known data structure capable of O(log n) update and prefix query. However, they are often forgotten in favour of the more useful segment tree. Still, they're much easier to implement and make a cool structure when drawn.
+</p>
+
+<!--more-->
+
+<p>
+If you draw out a Fenwick tree to sufficient depth, you'll see that they're fractal in nature - a tree of depth N is defined as 2 trees of depth N-1, with root of the second tree as a child of the root of the first. This definition makes it really easy to render.
+</p>
+
+<center>
+	<div style="display: inline-block">
+		<label for="maxdepth">Depth</label>
+		<div>
+			<input id="maxdepth" type="number" min="0" value="7" oninput="update()">
+		</div>
+	</div>
+	<div style="display: inline-block">
+		<label for="step">Step size</label>
+		<div>
+			<input id="step" type="range" min="10" max="200" value="70" step="10" oninput="update()">
+		</div>
+	</div>
+	<div style="display: inline-block">
+		<label for="scale">Step decay</label>
+		<div>
+			<input id="scale" type="range" min="0.5" max="1.2" value="0.9" step="0.01" oninput="update()">
+		</div>
+	</div>
+
+	<hr>
+
+	<canvas id="canvas" width="800" height="600" style="max-width: 80%; max-height: 600px"></canvas>
+</center>
+
+<script>
+
+let canvas = document.querySelector("canvas");
+let ctx = canvas.getContext("2d");
+
+let maxdepth, step, scale;
+
+function fenwick(x, y, width, depth) {
+	if(depth >= maxdepth) return;
+	fenwick(x, y, width/2, depth + 1);
+	fenwick(x + width/2, y + step * scale ** depth, width/2, depth + 1);
+	ctx.beginPath();
+	ctx.moveTo(x, y);
+	ctx.lineTo(x + width/2, y + step * scale ** depth);
+	ctx.stroke();
+}
+
+function update() {
+	function load(sel) {
+		return parseFloat(document.querySelector('input#' + sel).value);
+	}
+	maxdepth = load('maxdepth')|0;
+	step = load('step');
+	scale = load('scale');
+
+	if(scale == 1) {
+		canvas.height = step * maxdepth;
+	} else {
+		canvas.height = step * (scale ** maxdepth - 1) / (scale - 1);
+	}
+
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	fenwick(0, 0, canvas.width, 0);
+}
+
+update();
+</script>
+
+</article>
+
+<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/interactives/imgtools">&laquo; Image Tool</a>
+	
+
+	
+		<a class="next" href="/interactives/timeshare">Timeshare &raquo;</a>
+	
+</nav>
+
+
+		</main>
+
+		<div id="site-footer" class="content-width text-centre">
+		<ul class="li-flat mt-0">
+			<li><a href="/everything">everything</a></li>
+			<li><a href="/booklist">reading list</a></li>
+		</ul>
+		All work licensed under <b>CC BY-SA 4.0</b> unless otherwise stated.
+		<br>
+		This site is <a href="https://github.com/ralismark/ralismark.github.io">open source</a>!
+</div>
+
+	</body>
+</html>

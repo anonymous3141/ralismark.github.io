@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>Even More Concepts in C++14 (part 1) - ralismark</title>
+
+<!--[if lt IE 9]>
+	<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv='X-UA-Compatible' content='IE=edge'>
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link rel="canonical" href="/posts/cpp14-concept-1">
+<meta name="description" content="Implementing concepts in C++14 in under 50 lines">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/logo-32.png">
+
+<link type="application/atom+xml" rel="alternate" href="/feed.xml" title="ralismark" />
+
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+
+<!-- experiment: indieweb -->
+<link rel="webmention" href="https://webmention.io/www.ralismark.xyz/webmention" />
+<link rel="pingback" href="https://webmention.io/www.ralismark.xyz/xmlrpc" />
+
+	</head>
+	<body>
+		<header id="site-nav" class="full-width text-inverted">
+	<nav class="content-width flex-distribute">
+		<a id="navbar-root" href="/">ralismark</a>
+
+		
+
+		<ul id="navbar-pages" class="list-inline my-0">
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li class="navbar-page">
+				<a class="navbar-link" href="/posts">
+					Blog
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+		</ul>
+	</nav>
+</header>
+
+
+		<main class="content-width my-2 h-entry">
+			<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/posts/a-tale-of-indices">&laquo; A Tale of Indices</a>
+	
+
+	
+		<a class="next" href="/posts/stateless-brachistochrone">Stateless Brachistochrone Trajectories &raquo;</a>
+	
+</nav>
+
+
+<header class="post-meta fenced-b mb-1 text-centre bleed">
+	<h1 id="post-title" class="p-name">Even More Concepts in C++14 (part 1)</h1>
+	<p class="p-summary"><em>
+		Implementing concepts in C++14 in under 50 lines
+	</em></p>
+	<ul class="li-flat">
+		<li>
+		<time datetime="2017-05-07T00:00:00-05:00" class="dt-published">
+			<a class="u-url" href="/posts/cpp14-concept-1">
+			07 May 2017
+			</a>
+		</time>
+		</li>
+
+		<li>
+			
+			<abbr title="579 total words">3 mins to read</abbr>
+		</li>
+
+		
+		
+		<li id="post-tags">
+			<span id="post-tag-label">Tags:</span>
+			
+				<a class="p-category badge" href="/tags#c-cpp">c-cpp</a>
+			
+		</li>
+		
+	</p>
+</header>
+
+<article class="post-content e-content bounded">
+	<p>Despite Concepts Lite not making it into the standard (yet), there is still an
+extensive use of them in the standard library. It has its place in user
+libraries as well (most notable <a href="https://github.com/ericniebler/range-v3">ranges-v3</a>), providing a friendlier tool to
+use alongside SFINAE. Today, I’ll provide (yet another) C++14-compatible
+implementation of them.</p>
+
+<!--more-->
+
+<blockquote>
+  <p><em>Update, several years later:</em> I never got around to making a second article.
+Also, we’ve got actual concepts in C++20 now, so there’s that.</p>
+</blockquote>
+
+<h2 id="previous-work"><a href="#previous-work">Previous Work</a></h2>
+
+<p>Many other libraries have also been made to support concepts in c++. For
+example, <a href="https://github.com/pfultz2/Tick">Tick</a>, which provides concept checking in C++11 (albeit with some
+macros) and <a href="https://github.com/ericniebler/range-v3/blob/e411a19a312542be98ec9f318ef5b335e0fdaf0a/include/range/v3/utility/concepts.hpp">concepts in ranges-v3</a>, which is a completely library-only
+solution (no preprocessor!). However, both those libraries are decently heavy -
+Tick is a whole library, and the ranges-v3 implementation requires the meta
+template metaprogramming library (unless you go back far enough in the commit
+history).</p>
+
+<h2 id="yet-another-concepts-library"><a href="#yet-another-concepts-library">Yet Another Concepts Library</a></h2>
+
+<p>I’ve been able to make a single header implementation in under 200 lines, with
+the core component taking less than 50 lines. The syntax is similar to
+ranges-v3’s implementation, declaring the requirements in the return type of a
+template member function. Concept checking is also similar.</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+</pre></td><td class="rouge-code"><pre><span class="c1">// Concept definition</span>
+<span class="k">struct</span> <span class="nc">EqualityComparable</span>
+<span class="p">{</span>
+	<span class="k">static</span> <span class="kt">void</span> <span class="n">implicit_bool</span><span class="p">(</span><span class="kt">bool</span><span class="p">);</span>
+
+	<span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span> <span class="nc">T</span><span class="p">&gt;</span>
+	<span class="k">auto</span> <span class="n">requires_</span><span class="p">(</span><span class="n">T</span><span class="o">&amp;&amp;</span> <span class="n">a</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="k">decltype</span><span class="p">(</span><span class="n">implict_bool</span><span class="p">(</span><span class="n">a</span> <span class="o">==</span> <span class="n">a</span><span class="p">));</span>
+<span class="p">};</span>
+
+<span class="c1">// Concept checking</span>
+<span class="k">static</span> <span class="k">constexpr</span> <span class="kt">bool</span> <span class="n">int_models_ec</span> <span class="o">=</span> <span class="n">concepts</span><span class="o">::</span><span class="n">models</span><span class="o">&lt;</span><span class="n">EqualityComparable</span><span class="p">,</span> <span class="kt">int</span><span class="o">&gt;::</span><span class="n">value</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h2 id="core-implementation"><a href="#core-implementation">Core Implementation</a></h2>
+
+<p>The implementation is somewhat based off of ranges-v3’s implementation, and uses
+overload  resolution to determine if a concept is matched. No <code class="language-plaintext highlighter-rouge">void_t</code> detection
+idiom required.</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre><span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span><span class="o">...</span><span class="p">&gt;</span>
+<span class="k">auto</span> <span class="n">models_</span><span class="p">(...)</span> <span class="o">-&gt;</span> <span class="n">std</span><span class="o">::</span><span class="n">false_type</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+<p>This catch-all function is the fallback if the concept is not matched. This
+ensures that the overload set is not empty after SFINAE. The ellipses (<code class="language-plaintext highlighter-rouge">...</code>)
+parameter list is a variadic parameter list (whose actual use is effectively
+replaced by templates), which accepts any and all arguments. The caller cleans
+this up, so it’s all OK. Besides, this should never be actually called.</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre></td><td class="rouge-code"><pre><span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span><span class="o">...</span> <span class="nc">Ts</span><span class="p">,</span> <span class="k">typename</span> <span class="nc">Concept</span><span class="p">,</span>
+	<span class="k">typename</span> <span class="o">=</span> <span class="k">decltype</span><span class="p">(</span>
+		<span class="n">std</span><span class="o">::</span><span class="n">declval</span><span class="o">&lt;</span><span class="n">Concept</span><span class="o">&amp;</span><span class="p">&gt;()</span>
+			<span class="p">.</span><span class="k">template</span> <span class="n">requires_</span><span class="o">&lt;</span><span class="n">Ts</span><span class="p">...&gt;(</span><span class="n">std</span><span class="o">::</span><span class="n">declval</span><span class="o">&lt;</span><span class="n">Ts</span><span class="o">&gt;</span><span class="p">()...)</span>
+		<span class="p">)</span><span class="o">&gt;</span>
+<span class="k">auto</span> <span class="n">models_</span><span class="p">(</span><span class="n">Concept</span><span class="o">*</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">std</span><span class="o">::</span><span class="n">true_type</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>This is the part of the concept checking that does all the work. It uses SFINAE
+to remove it (and falling back to the other one) if the return type is not
+well-formed for the given template types. Why a pointer as an argument? I’m not
+sure, I was just following Eric Niebler’s implementation (<a href="https://github.com/ericniebler/range-v3/blob/e411a19a312542be98ec9f318ef5b335e0fdaf0a/include/range/v3/utility/concepts.hpp#L112">which also uses a
+pointer</a>).  I’m guessing it bypasses having to use <code class="language-plaintext highlighter-rouge">declval</code> and that kind of
+stuff, while still getting the concept type.</p>
+
+<h2 id="helpers"><a href="#helpers">Helpers</a></h2>
+
+<p>These are just a few helpers to make defining and checking concepts easier:</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre></td><td class="rouge-code"><pre><span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span> <span class="nc">Concept</span><span class="p">,</span> <span class="k">typename</span><span class="o">...</span> <span class="nc">Ts</span><span class="p">&gt;</span>
+<span class="k">using</span> <span class="n">models</span> <span class="o">=</span> <span class="k">decltype</span><span class="p">(</span><span class="n">models_</span><span class="o">&lt;</span><span class="n">Ts</span><span class="p">...</span><span class="o">&gt;</span><span class="p">(</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="n">Concept</span><span class="o">*&gt;</span><span class="p">(</span><span class="nb">nullptr</span><span class="p">)));</span>
+
+<span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span><span class="o">...</span> <span class="nc">Ts</span><span class="p">&gt;</span>
+<span class="kt">void</span> <span class="nf">valid_expr</span><span class="p">(</span><span class="n">Ts</span><span class="o">&amp;&amp;</span><span class="p">...);</span>
+
+<span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span><span class="o">...</span><span class="p">&gt;</span>
+<span class="k">using</span> <span class="n">exists</span> <span class="o">=</span> <span class="kt">int</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>The <code class="language-plaintext highlighter-rouge">models</code> alias wraps <code class="language-plaintext highlighter-rouge">models_()</code>, providing a friendlier interface.
+<code class="language-plaintext highlighter-rouge">valid_expr</code> checks if all expressions passed are valid (e.g.
+<code class="language-plaintext highlighter-rouge">decltype(valid_expr(i++, ++i))</code>). <code class="language-plaintext highlighter-rouge">exists</code> is the same, but with types (e.g.
+<code class="language-plaintext highlighter-rouge">exists&lt;typename T::value_type, typename T::reference&gt;</code>).</p>
+
+<h2 id="refining-concepts"><a href="#refining-concepts">Refining Concepts?</a></h2>
+
+<p>Right now, the implementation does directly support refining concepts. You can
+do this in a roundabout way with <code class="language-plaintext highlighter-rouge">enable_if</code>, but it’s quite non-natural
+considering how common refinement is:</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre><span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span> <span class="nc">T</span><span class="p">&gt;</span>
+<span class="n">requires_</span><span class="p">(</span><span class="n">T</span><span class="o">&amp;&amp;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">exists</span><span class="o">&lt;</span>
+		<span class="k">decltype</span><span class="p">(</span><span class="cm">/*whatever you're checking*/</span><span class="p">),</span>
+		<span class="n">std</span><span class="o">::</span><span class="n">enable_if_t</span><span class="o">&lt;</span><span class="n">models</span><span class="o">&lt;</span><span class="cm">/* base concept */</span><span class="p">,</span> <span class="n">T</span><span class="o">&gt;&gt;</span>
+	<span class="o">&gt;</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>That’s why there’s going to be part 2 (when I decide to make it).</p>
+
+<p>All code is on <a href="https://gist.github.com/ralismark/e30a1f4988748d4f700da44fef36c606">Github</a>.</p>
+
+
+</article>
+
+<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/posts/a-tale-of-indices">&laquo; A Tale of Indices</a>
+	
+
+	
+		<a class="next" href="/posts/stateless-brachistochrone">Stateless Brachistochrone Trajectories &raquo;</a>
+	
+</nav>
+
+
+		</main>
+
+		<div id="site-footer" class="content-width text-centre">
+		<ul class="li-flat mt-0">
+			<li><a href="/everything">everything</a></li>
+			<li><a href="/booklist">reading list</a></li>
+		</ul>
+		All work licensed under <b>CC BY-SA 4.0</b> unless otherwise stated.
+		<br>
+		This site is <a href="https://github.com/ralismark/ralismark.github.io">open source</a>!
+</div>
+
+	</body>
+</html>

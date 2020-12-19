@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>Git Emergency Procedures - Recovering deleted refs - ralismark</title>
+
+<!--[if lt IE 9]>
+	<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv='X-UA-Compatible' content='IE=edge'>
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link rel="canonical" href="/posts/git-ep-deleted-ref">
+<meta name="description" content="Recovering commits from deleted branches">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/logo-32.png">
+
+<link type="application/atom+xml" rel="alternate" href="/feed.xml" title="ralismark" />
+
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+
+<!-- experiment: indieweb -->
+<link rel="webmention" href="https://webmention.io/www.ralismark.xyz/webmention" />
+<link rel="pingback" href="https://webmention.io/www.ralismark.xyz/xmlrpc" />
+
+	</head>
+	<body>
+		<header id="site-nav" class="full-width text-inverted">
+	<nav class="content-width flex-distribute">
+		<a id="navbar-root" href="/">ralismark</a>
+
+		
+
+		<ul id="navbar-pages" class="list-inline my-0">
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li class="navbar-page">
+				<a class="navbar-link" href="/posts">
+					Blog
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+		</ul>
+	</nav>
+</header>
+
+
+		<main class="content-width my-2 h-entry">
+			<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/posts/stateless-brachistochrone">&laquo; Stateless Brachistochrone Trajectories</a>
+	
+
+	
+		<a class="next" href="/posts/git-ep-cleanup">Git Emergency Procedures - Cleaning things up &raquo;</a>
+	
+</nav>
+
+
+<header class="post-meta fenced-b mb-1 text-centre bleed">
+	<h1 id="post-title" class="p-name">Git Emergency Procedures - Recovering deleted refs</h1>
+	<p class="p-summary"><em>
+		Recovering commits from deleted branches
+	</em></p>
+	<ul class="li-flat">
+		<li>
+		<time datetime="2017-11-30T00:00:00-06:00" class="dt-published">
+			<a class="u-url" href="/posts/git-ep-deleted-ref">
+			30 November 2017
+			</a>
+		</time>
+		</li>
+
+		<li>
+			
+			<abbr title="270 total words">2 mins to read</abbr>
+		</li>
+
+		
+		
+		<li id="post-tags">
+			<span id="post-tag-label">Tags:</span>
+			
+				<a class="p-category badge" href="/tags#git">git</a>
+			
+		</li>
+		
+	</p>
+</header>
+
+<article class="post-content e-content bounded">
+	<p>Suppose you deleted a branch, or undid a merge with a now deleted branch. How do
+you recover the commits? There are several things to go about this.</p>
+
+<!--more-->
+
+<h2 id="immediate-action"><a href="#immediate-action">Immediate Action</a></h2>
+
+<p>This is a completely recoverable scenario, since git doesn’t immediately delete
+unreferenced commits. To find the hash of the commit, you can run <code class="language-plaintext highlighter-rouge">git reflog</code>
+to see the HEAD of previous commands. This allows you to find the tip of the
+branch (which you would’ve been on when working on it). This is probable the
+best way to find the commit you need to reference.</p>
+
+<p>Next, to actually restore the reference, you need to make a branch pointing to
+the hash: <code class="language-plaintext highlighter-rouge">git branch &lt;name&gt; &lt;hash&gt;</code>.</p>
+
+<h2 id="possible-causes"><a href="#possible-causes">Possible Causes</a></h2>
+
+<p>One way this can happen (as it did to me) was to:</p>
+<ol>
+  <li>Merge branch <code class="language-plaintext highlighter-rouge">feature</code> into <code class="language-plaintext highlighter-rouge">master</code>.</li>
+  <li>Delete branch <code class="language-plaintext highlighter-rouge">feature</code>.</li>
+  <li>Later, delete the merge commit (e.g. during a rebase).</li>
+</ol>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="rouge-code"><pre>o --- o --- o --- o --- o --- o &lt;-- master
+       \               .'
+        \             .'
+         o --- o --- o  (feature, deleted)
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>Normally, deleting the branch in step 2 is fine, since the merge still holds a
+reference to the deleted branch. However, after deleting the merge commit (or
+all the merged commits), nothing references the branch, and so it disappears
+from history! This can be done accidentally, since there’s no warnings. However,
+if the merged was a fast-forward, you’ll have to delete all the commits in the
+merged branch (since the commits on <code class="language-plaintext highlighter-rouge">feature</code> are inlined into <code class="language-plaintext highlighter-rouge">master</code>).</p>
+
+<h2 id="other-notes"><a href="#other-notes">Other Notes</a></h2>
+
+<p>If you want to change the commit a branch is pointing to, use
+<code class="language-plaintext highlighter-rouge">git reset --hard &lt;hash&gt;</code>.</p>
+
+</article>
+
+<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/posts/stateless-brachistochrone">&laquo; Stateless Brachistochrone Trajectories</a>
+	
+
+	
+		<a class="next" href="/posts/git-ep-cleanup">Git Emergency Procedures - Cleaning things up &raquo;</a>
+	
+</nav>
+
+
+		</main>
+
+		<div id="site-footer" class="content-width text-centre">
+		<ul class="li-flat mt-0">
+			<li><a href="/everything">everything</a></li>
+			<li><a href="/booklist">reading list</a></li>
+		</ul>
+		All work licensed under <b>CC BY-SA 4.0</b> unless otherwise stated.
+		<br>
+		This site is <a href="https://github.com/ralismark/ralismark.github.io">open source</a>!
+</div>
+
+	</body>
+</html>

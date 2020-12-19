@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>Small Merge - ralismark</title>
+
+<!--[if lt IE 9]>
+	<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv='X-UA-Compatible' content='IE=edge'>
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link rel="canonical" href="/posts/small-merge">
+<meta name="description" content="A generalisation of DSU&#39;s merge by size to be more useful.">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/logo-32.png">
+
+<link type="application/atom+xml" rel="alternate" href="/feed.xml" title="ralismark" />
+
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+
+<!-- experiment: indieweb -->
+<link rel="webmention" href="https://webmention.io/www.ralismark.xyz/webmention" />
+<link rel="pingback" href="https://webmention.io/www.ralismark.xyz/xmlrpc" />
+
+	</head>
+	<body>
+		<header id="site-nav" class="full-width text-inverted">
+	<nav class="content-width flex-distribute">
+		<a id="navbar-root" href="/">ralismark</a>
+
+		
+
+		<ul id="navbar-pages" class="list-inline my-0">
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li class="navbar-page">
+				<a class="navbar-link" href="/posts">
+					Blog
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+		</ul>
+	</nav>
+</header>
+
+
+		<main class="content-width my-2 h-entry">
+			<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/posts/alberts-lis">&laquo; Short and simple LIS</a>
+	
+
+	
+		<a class="next" href="/posts/binary-search">You don't know binary search &raquo;</a>
+	
+</nav>
+
+
+<header class="post-meta fenced-b mb-1 text-centre bleed">
+	<h1 id="post-title" class="p-name">Small Merge</h1>
+	<p class="p-summary"><em>
+		A generalisation of DSU's merge by size to be more useful.
+	</em></p>
+	<ul class="li-flat">
+		<li>
+		<time datetime="2020-04-21T00:00:00-05:00" class="dt-published">
+			<a class="u-url" href="/posts/small-merge">
+			21 April 2020
+			</a>
+		</time>
+		</li>
+
+		<li>
+			
+			<abbr title="597 total words">3 mins to read</abbr>
+		</li>
+
+		
+		
+		<li id="post-tags">
+			<span id="post-tag-label">Tags:</span>
+			
+				<a class="p-category badge" href="/tags#informatics">informatics</a>
+			
+		</li>
+		
+	</p>
+</header>
+
+<article class="post-content e-content bounded">
+	<p>Small merge is a technique derived from DSU which allows merging of groups (and data about groups) by moving elements between groups at most O(n log n) times.</p>
+
+<!--more-->
+
+<p>tl;dr: When merging collections of objects, only move from smaller group to larger group. This is O(n log n).</p>
+
+<p>This was originally explained to me as a variation of union find: what if we directly update the parent pointer when we merge two sets? To do this, we’ll need to be able to iterate over all nodes in a set, and we can store this in a vector. Then, when we merge, we only change the parent pointers of elements in the smaller set. In code, it’s something like this:</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+</pre></td><td class="rouge-code"><pre><span class="kt">int</span> <span class="n">root</span><span class="p">[</span><span class="n">N</span><span class="p">];</span> <span class="c1">// initially, root[i] = i</span>
+<span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">contents</span><span class="p">[</span><span class="n">N</span><span class="p">];</span> <span class="c1">// initially, contents[i] = {i}</span>
+
+<span class="kt">void</span> <span class="nf">merge</span><span class="p">(</span><span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="kt">int</span> <span class="n">b</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="n">a</span> <span class="o">=</span> <span class="n">root</span><span class="p">[</span><span class="n">a</span><span class="p">];</span> <span class="n">b</span> <span class="o">=</span> <span class="n">root</span><span class="p">[</span><span class="n">b</span><span class="p">];</span>
+	<span class="k">if</span><span class="p">(</span><span class="n">contents</span><span class="p">[</span><span class="n">a</span><span class="p">].</span><span class="n">size</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">contents</span><span class="p">[</span><span class="n">b</span><span class="p">].</span><span class="n">size</span><span class="p">())</span> <span class="n">swap</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span> <span class="c1">// ensure a's group is larger</span>
+	<span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">:</span> <span class="n">contents</span><span class="p">[</span><span class="n">b</span><span class="p">])</span> <span class="p">{</span>
+		<span class="n">parent</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">;</span>
+		<span class="n">contents</span><span class="p">[</span><span class="n">a</span><span class="p">].</span><span class="n">emplace_back</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+	<span class="p">}</span>
+	<span class="n">contents</span><span class="p">[</span><span class="n">b</span><span class="p">].</span><span class="n">clear</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>By observing how a single value moves between sets, we can see that the number of moves is log of the size of set its in – when a number moves, the set must at least double in size. Thus, the overall complexity in terms of total number of moves is in fact <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><mi>n</mi><mi>log</mi><mo>&#x2061;</mo><mi>n</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(n \log n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mord mathnormal">n</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mop">lo<span style="margin-right:0.01389em;">g</span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span>.</p>
+
+<h2 id="generalising-this-idea"><a href="#generalising-this-idea">Generalising this idea</a></h2>
+
+<p>We can take the idea of only merging smaller into larger, and generalise it, such as by storing more useful information. Suppose we have the following problem:</p>
+
+<blockquote>
+  <p>There are N integers, initially in separate groups. We want to support the following operations:</p>
+
+  <ul>
+    <li>Merge two groups into one.</li>
+    <li>Answer query: How many elements in a certain group have a certain value?</li>
+  </ul>
+</blockquote>
+
+<p>To answer the second operation, we keep a map of the number of each value instead of just the contents, and use normal DSU. When merging, we merge from the group whose map is smaller into the one whose map is larger, thus being able solve the problem in <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><mi>n</mi><msup><mo><mi>log</mi><mo>&#x2061;</mo></mo><mn>2</mn></msup><mi>n</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(n \log^2 n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.148448em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mord mathnormal">n</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mop"><span class="mop">lo<span style="margin-right:0.01389em;">g</span></span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8984479999999999em;"><span style="top:-3.1473400000000002em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span> with each query being <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><mi>log</mi><mo>&#x2061;</mo><mi>n</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(\log n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mop">lo<span style="margin-right:0.01389em;">g</span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span>.</p>
+
+<p>In particular, this technique is much more useful on trees, where we can entire remove the DSU required to find the root. <a href="https://www.hackerrank.com/contests/101feb14/challenges/coloring-tree">HackerRank - Coloring Tree</a> is a good problem to demonstrate this:</p>
+
+<blockquote>
+  <p>There is a rooted tree of size N, where each node has a value associated. We want to answer Q queries offline, each asking for the number of distinct values in a given subtree.</p>
+</blockquote>
+
+<p>To do this, we keep a set for each node containing all values in the subtree. Then, we answer queries starting from the leaves, merging children subtrees into parents as needed. However, this lends itself more to a recursive algorithm. In pseudocode:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+</pre></td><td class="rouge-code"><pre>// solve queries at node
+// returns the set of all value in its subtree
+solve(node):
+	values = set()
+	for v in node's children:
+		s = solve(v)
+		values = merge(values, s) // small merge here
+	add node's value to values
+	answer queries at node
+	return values
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>And that’s the general shape of Small Merge algorithms! If you can keep data that’s at most the size of the group, you can small merge.</p>
+
+<p>If you want to read more, there’s <a href="https://cp-algorithms.com/data_structures/disjoint_set_union.html#toc-tgt-15">a section on cp-algorithms</a>.</p>
+
+<h2 id="practice-problems"><a href="#practice-problems">Practice Problems</a></h2>
+
+<p>I couldn’t find many problems which use this technique. If you know of any, please let me know in the comments below!</p>
+
+<ul>
+  <li><a href="https://www.hackerrank.com/contests/101feb14/challenges/coloring-tree">HackerRank - Coloring Tree</a></li>
+  <li><a href="http://usaco.org/index.php?page=viewproblem2&amp;cpid=286">USACO Gold - Ying and Yang</a></li>
+  <li><a href="https://codeforces.com/contest/1193/problem/B">Codeforces - Magic Tree</a></li>
+</ul>
+
+</article>
+
+<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/posts/alberts-lis">&laquo; Short and simple LIS</a>
+	
+
+	
+		<a class="next" href="/posts/binary-search">You don't know binary search &raquo;</a>
+	
+</nav>
+
+
+		</main>
+
+		<div id="site-footer" class="content-width text-centre">
+		<ul class="li-flat mt-0">
+			<li><a href="/everything">everything</a></li>
+			<li><a href="/booklist">reading list</a></li>
+		</ul>
+		All work licensed under <b>CC BY-SA 4.0</b> unless otherwise stated.
+		<br>
+		This site is <a href="https://github.com/ralismark/ralismark.github.io">open source</a>!
+</div>
+
+	</body>
+</html>

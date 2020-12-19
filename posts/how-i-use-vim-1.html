@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>How I Use Vim (part 1) - ralismark</title>
+
+<!--[if lt IE 9]>
+	<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv='X-UA-Compatible' content='IE=edge'>
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link rel="canonical" href="/posts/how-i-use-vim-1">
+<meta name="description" content="Interesting aspects of my vim usage">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/logo-32.png">
+
+<link type="application/atom+xml" rel="alternate" href="/feed.xml" title="ralismark" />
+
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+
+<!-- experiment: indieweb -->
+<link rel="webmention" href="https://webmention.io/www.ralismark.xyz/webmention" />
+<link rel="pingback" href="https://webmention.io/www.ralismark.xyz/xmlrpc" />
+
+	</head>
+	<body>
+		<header id="site-nav" class="full-width text-inverted">
+	<nav class="content-width flex-distribute">
+		<a id="navbar-root" href="/">ralismark</a>
+
+		
+
+		<ul id="navbar-pages" class="list-inline my-0">
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li class="navbar-page">
+				<a class="navbar-link" href="/posts">
+					Blog
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+		</ul>
+	</nav>
+</header>
+
+
+		<main class="content-width my-2 h-entry">
+			<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/posts/binary-search">&laquo; You don't know binary search</a>
+	
+
+	
+		<a class="next" href="/posts/blog-style">Blog Post Style &raquo;</a>
+	
+</nav>
+
+
+<header class="post-meta fenced-b mb-1 text-centre bleed">
+	<h1 id="post-title" class="p-name">How I Use Vim (part 1)</h1>
+	<p class="p-summary"><em>
+		Interesting aspects of my vim usage
+	</em></p>
+	<ul class="li-flat">
+		<li>
+		<time datetime="2020-08-29T00:00:00-05:00" class="dt-published">
+			<a class="u-url" href="/posts/how-i-use-vim-1">
+			29 August 2020
+			</a>
+		</time>
+		</li>
+
+		<li>
+			
+			<abbr title="699 total words">4 mins to read</abbr>
+		</li>
+
+		
+		
+	</p>
+</header>
+
+<article class="post-content e-content bounded">
+	<p>I’ve been using Vim (well, Neovim) for several years now and I’ve developed some idiosyncrasies along the way. <a href="https://github.com/ralismark/vimfiles">My vimrc</a> is quite large, so here’s a few points.</p>
+
+<!--more-->
+
+<blockquote>
+  <p>Note: This not intended as a guide on how to learn or use Vim – it’s how <em>I</em> use Vim, not how you should use Vim. This is a sample of the things I do and use.</p>
+
+  <p>Nor is this written with absolute beginners in mind. If you’re just starting, take time to learn Vim fundamentals before diving into extensive customisation.</p>
+</blockquote>
+
+<h2 id="core-vim"><a href="#core-vim">Core Vim</a></h2>
+
+<p>Like all Vim users, I use <code class="language-plaintext highlighter-rouge">hjkl</code> to navigate. However, one thing you might see in Vim tutorials that I <em>don’t</em> use are numbers with these keys – <code class="language-plaintext highlighter-rouge">5j</code> to go down 5 lines, for example. I had <a href="https://vimhelp.org/options.txt.html#%27relativenumber%27"><code class="language-plaintext highlighter-rouge">'relativenumber'</code></a> set for several years, but it never felt intuitive. This extends to operator-pending mode too – I heavily rely on <a href="https://vimhelp.org/visual.txt.html#linewise-visual">visual line</a>/<a href="https://vimhelp.org/visual.txt.html#blockwise-visual">block</a> mode to do multiline operations. For example, to delete multiple lines, I would do <code class="language-plaintext highlighter-rouge">Vjjjjd</code> instead of <code class="language-plaintext highlighter-rouge">d4j</code>.</p>
+
+<p>Furthermore, for plain navigation I often use uppercase <a href="https://vimhelp.org/motion.txt.html#W"><code class="language-plaintext highlighter-rouge">W</code></a> and <a href="https://vimhelp.org/motion.txt.html#B"><code class="language-plaintext highlighter-rouge">B</code></a> to move left and right. I also use <code class="language-plaintext highlighter-rouge">0w</code> instead of <code class="language-plaintext highlighter-rouge">^</code>, which is harder to type, to move to the start of line. I haven’t figured out a good way of navigating vertically yet, so I’m still on h/j plus fast keyrepeat.</p>
+
+<h2 id="leader-mapping"><a href="#leader-mapping">Leader Mapping</a></h2>
+
+<p>I have <a href="https://vimhelp.org/map.txt.html#%3CLeader%3E"><code class="language-plaintext highlighter-rouge">&lt;leader&gt;</code></a> mapped to <code class="language-plaintext highlighter-rouge">&lt;space&gt;</code>. Here’s some of my bindings for inspiration:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">&lt;leader&gt;w</code> to save (<a href="https://vimhelp.org/editing.txt.html#:update"><code class="language-plaintext highlighter-rouge">:update</code></a>), which I use <em>very</em> often</li>
+  <li><code class="language-plaintext highlighter-rouge">&lt;leader&gt;q</code> to close buffer with <code class="language-plaintext highlighter-rouge">:q</code></li>
+  <li><code class="language-plaintext highlighter-rouge">&lt;leader&gt;o&lt;key&gt;</code> to toggle various options, such as <a href="https://vimhelp.org/options.txt.html#%27wrap%27">(w)rap</a>, <a href="https://vimhelp.org/options.txt.html#%27diff%27">(d)iff</a>, <a href="https://vimhelp.org/options.txt.html#%27spell%27">(s)pellchecking</a></li>
+  <li><code class="language-plaintext highlighter-rouge">&lt;leader&gt;m</code> to make using <a href="https://github.com/tpope/vim-dispatch">tpope/vim-dispatch</a></li>
+  <li><code class="language-plaintext highlighter-rouge">&lt;leader&gt;x</code> to “run” the current file (<code class="language-plaintext highlighter-rouge">ExecCurrent()</code> in my vimrc).</li>
+</ul>
+
+<h2 id="splits--tabs"><a href="#splits--tabs">Splits &amp; Tabs</a></h2>
+
+<p>I have a lot of bindings set up to make splits and tabs easier to use. This includes:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">&lt;leader&gt;s&lt;key&gt;</code> to open empty splits in different directions with <a href="https://vimhelp.org/windows.txt.html#:new"><code class="language-plaintext highlighter-rouge">:new</code></a> and <a href="https://vimhelp.org/windows.txt.html#:aboveleft"><code class="language-plaintext highlighter-rouge">:aboveleft</code></a>/<a href="https://vimhelp.org/windows.txt.html#:belowright"><code class="language-plaintext highlighter-rouge">:belowright</code></a>/<a href="https://vimhelp.org/windows.txt.html#:vertical"><code class="language-plaintext highlighter-rouge">:vertical</code></a>.</li>
+  <li><code class="language-plaintext highlighter-rouge">&lt;c-hjkl&gt;</code> to move between splits</li>
+  <li><code class="language-plaintext highlighter-rouge">&lt;leader&gt;t</code> to open a new tab</li>
+  <li><code class="language-plaintext highlighter-rouge">[t</code> and <code class="language-plaintext highlighter-rouge">]t</code> to move between tabs</li>
+</ul>
+
+<p>When I started using Vim, I often encountered articles about how “people are using tabs wrong” and how buffers are the way you’re meant to use Vim e.g. <a href="https://stackoverflow.com/a/103590/6936976">this</a>. However, having hidden buffers (<a href="https://vimhelp.org/options.txt.html#%27hidden%27"><code class="language-plaintext highlighter-rouge">'hidden'</code></a>) didn’t feel right and I kept forgetting which I had open, so this was the setup I eventually settled into.</p>
+
+<h2 id="less-surprising-behaviour"><a href="#less-surprising-behaviour">Less surprising behaviour</a></h2>
+
+<p>I’ve got quite a few mappings that make movement and operations behave “as you would expect”, or just generally more useful. Firstly, for wrapping:</p>
+
+<div class="language-vim highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre><span class="nb">noremap</span> <span class="p">&lt;</span>expr<span class="p">&gt;</span> G &amp;<span class="nb">wrap</span> ? <span class="s2">"G$g0"</span> <span class="p">:</span> <span class="s2">"G"</span>
+<span class="nb">noremap</span> <span class="p">&lt;</span>expr<span class="p">&gt;</span> <span class="m">0</span> &amp;<span class="nb">wrap</span> ? <span class="s1">'g0'</span> <span class="p">:</span> <span class="s1">'0'</span>
+<span class="nb">noremap</span> <span class="p">&lt;</span>expr<span class="p">&gt;</span> $ &amp;<span class="nb">wrap</span> ? <span class="s2">"g$"</span> <span class="p">:</span> <span class="s2">"$"</span>
+<span class="nb">noremap</span> <span class="p">&lt;</span>expr<span class="p">&gt;</span> <span class="k">j</span> <span class="p">(</span><span class="k">v</span><span class="p">:</span><span class="nb">count</span> <span class="p">==</span> <span class="m">0</span> ? <span class="s1">'gj'</span> <span class="p">:</span> <span class="s1">'j'</span><span class="p">)</span>
+<span class="nb">noremap</span> <span class="p">&lt;</span>expr<span class="p">&gt;</span> <span class="k">k</span> <span class="p">(</span><span class="k">v</span><span class="p">:</span><span class="nb">count</span> <span class="p">==</span> <span class="m">0</span> ? <span class="s1">'gk'</span> <span class="p">:</span> <span class="s1">'k'</span><span class="p">)</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>And a few for visual mode:</p>
+
+<div class="language-vim highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre></td><td class="rouge-code"><pre><span class="c">" Fixed I/A for visual</span>
+xnoremap <span class="p">&lt;</span>expr<span class="p">&gt;</span> I <span class="k">mode</span><span class="p">()</span> <span class="p">==</span># <span class="s1">'v'</span> ? <span class="s2">"\&lt;c-v&gt;I"</span> <span class="p">:</span> <span class="k">mode</span><span class="p">()</span> <span class="p">==</span># <span class="s1">'V'</span> ? <span class="s2">"\&lt;c-v&gt;^o^I"</span> <span class="p">:</span> <span class="s2">"I"</span>
+xnoremap <span class="p">&lt;</span>expr<span class="p">&gt;</span> A <span class="k">mode</span><span class="p">()</span> <span class="p">==</span># <span class="s1">'v'</span> ? <span class="s2">"\&lt;c-v&gt;A"</span> <span class="p">:</span> <span class="k">mode</span><span class="p">()</span> <span class="p">==</span># <span class="s1">'V'</span> ? <span class="s2">"\&lt;c-v&gt;Oo$A"</span> <span class="p">:</span> <span class="s2">"A"</span>
+<span class="c">" Keep selection</span>
+xnoremap <span class="p">&lt;</span> <span class="p">&lt;</span>gv
+xnoremap <span class="p">&gt;</span> <span class="p">&gt;</span>gv
+<span class="c">" Paste without overwriting default register (doesn't work with other registers)</span>
+xnoremap <span class="k">p</span> pgvy
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>And a bunch that don’t really fit the above two groups:</p>
+
+<div class="language-vim highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre></td><td class="rouge-code"><pre><span class="c">" Yank to end of line</span>
+nnoremap Y <span class="k">y</span>$
+<span class="c">" Escape as normal</span>
+<span class="k">tnoremap</span> <span class="p">&lt;</span>esc<span class="p">&gt;</span> <span class="p">&lt;</span><span class="k">c</span><span class="p">-</span>\<span class="p">&gt;&lt;</span><span class="k">c</span><span class="p">-</span><span class="k">n</span><span class="p">&gt;</span>
+<span class="c">" go to correct column</span>
+<span class="nb">noremap</span> ' `
+<span class="c">" Don't copy single letter deletes</span>
+nnoremap <span class="k">x</span> "_x
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h2 id="a-grab-bag-of-mappings"><a href="#a-grab-bag-of-mappings">A grab bag of mappings</a></h2>
+
+<p>Finally, here’s a collection of miscellaneous mappings that I use often</p>
+
+<div class="language-vim highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+</pre></td><td class="rouge-code"><pre><span class="nb">noremap</span> ; <span class="p">:</span>
+<span class="c">" Folding</span>
+nnoremap <span class="p">&lt;</span><span class="k">tab</span><span class="p">&gt;</span> za
+<span class="c">" Clear search highlight</span>
+nnoremap <span class="p">&lt;</span><span class="k">silent</span><span class="p">&gt;</span> <span class="p">&lt;</span>esc<span class="p">&gt;</span> <span class="p">&lt;</span>cmd<span class="p">&gt;</span>nohl<span class="p">&lt;</span><span class="k">cr</span><span class="p">&gt;</span>
+<span class="c">" for f/F/t/T</span>
+<span class="nb">noremap</span> <span class="p">,</span> ;
+<span class="c">" &lt;cr&gt; mutlitool: follow link in man/help/quickfix, otherwise run recorded macro</span>
+<span class="nb">map</span> <span class="p">&lt;</span>expr<span class="p">&gt;</span> <span class="p">&lt;</span><span class="k">return</span><span class="p">&gt;</span> <span class="p">(</span><span class="nb">or</span><span class="p">(</span>&amp;<span class="nb">buftype</span> <span class="p">==</span> <span class="s1">'help'</span><span class="p">,</span> <span class="nb">expand</span><span class="p">(</span><span class="s2">"%:p"</span><span class="p">)</span> <span class="p">=~</span> <span class="s1">'^man://'</span><span class="p">))</span> ? <span class="s2">"\&lt;c-]&gt;"</span> <span class="p">:</span> <span class="p">(</span>&amp;<span class="nb">buftype</span> <span class="p">==</span> <span class="s1">'quickfix'</span> ? <span class="s2">"\&lt;CR&gt;"</span> <span class="p">:</span> <span class="s2">"@q"</span><span class="p">)</span>
+<span class="c">" non-saving delete</span>
+<span class="nb">noremap</span> X "_d
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h2 id="conclusion"><a href="#conclusion">Conclusion</a></h2>
+
+<p>This is the more “core” part of my Vim usage. I plan on going into my many plugins in part 2 (whenever I get around to it).</p>
+
+</article>
+
+<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/posts/binary-search">&laquo; You don't know binary search</a>
+	
+
+	
+		<a class="next" href="/posts/blog-style">Blog Post Style &raquo;</a>
+	
+</nav>
+
+
+		</main>
+
+		<div id="site-footer" class="content-width text-centre">
+		<ul class="li-flat mt-0">
+			<li><a href="/everything">everything</a></li>
+			<li><a href="/booklist">reading list</a></li>
+		</ul>
+		All work licensed under <b>CC BY-SA 4.0</b> unless otherwise stated.
+		<br>
+		This site is <a href="https://github.com/ralismark/ralismark.github.io">open source</a>!
+</div>
+
+	</body>
+</html>

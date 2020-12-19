@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>Image Tool - ralismark</title>
+
+<!--[if lt IE 9]>
+	<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv='X-UA-Compatible' content='IE=edge'>
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link rel="canonical" href="/interactives/imgtools">
+<meta name="description" content="A client-side-only steganography tool">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/logo-32.png">
+
+<link type="application/atom+xml" rel="alternate" href="/feed.xml" title="ralismark" />
+
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+
+<!-- experiment: indieweb -->
+<link rel="webmention" href="https://webmention.io/www.ralismark.xyz/webmention" />
+<link rel="pingback" href="https://webmention.io/www.ralismark.xyz/xmlrpc" />
+
+	</head>
+	<body>
+		<header id="site-nav" class="full-width text-inverted">
+	<nav class="content-width flex-distribute">
+		<a id="navbar-root" href="/">ralismark</a>
+
+		
+
+		<ul id="navbar-pages" class="list-inline my-0">
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li class="navbar-page">
+				<a class="navbar-link" href="/posts">
+					Blog
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+		</ul>
+	</nav>
+</header>
+
+
+		<main class="content-width my-2 h-entry">
+			<nav class="post-nav flex-distribute my-1">
+	
+		<span class="prev nav-empty"></span>
+	
+
+	
+		<a class="next" href="/interactives/fenwick-tree">Fenwick Trees &raquo;</a>
+	
+</nav>
+
+
+<header class="post-meta fenced-b mb-1 text-centre bleed">
+	<h1 id="post-title" class="p-name">Image Tool</h1>
+	<p class="p-summary"><em>
+		A client-side-only steganography tool
+	</em></p>
+	<ul class="li-flat">
+		<li>
+		<time datetime="2019-01-09T00:00:00-06:00" class="dt-published">
+			<a class="u-url" href="/interactives/imgtools">
+			09 January 2019
+			</a>
+		</time>
+		</li>
+
+		<li>
+			
+			<abbr title="52 total words">1 min to read</abbr>
+		</li>
+
+		
+		
+		<li id="post-tags">
+			<span id="post-tag-label">Tags:</span>
+			
+				<a class="p-category badge" href="/tags#exploit">exploit</a>
+			
+		</li>
+		
+	</p>
+</header>
+
+<article class="post-content e-content bounded">
+	
+<p>This is a client-side only steganography tool to detect information hidden in images, using only the Canvas API - primarily <a href="https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/getImageData"><code class="language-plaintext highlighter-rouge">getImageData</code></a> and <a href="https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/putImageData"><code class="language-plaintext highlighter-rouge">putImageData</code></a>.</p>
+
+
+
+<!--more-->
+
+<hr>
+
+<div>
+	<div>
+		<input id="filein" type="file" accept="image/*" oninput="load(this)">
+	</div>
+	<div>
+		<label for="lsb">Number of LSBs to show:</label>
+		<div>
+			<input id="lsb" type="range" min="1" max="8" value="8" oninput="update()">
+			<span id="lsb-value"></span>
+		</div>
+	</div>
+	<div>
+		<label for="ts">Transparency pass (below in red, above in green, equal in blue)</label>
+		<div>
+			<input id="ts" type="range" min="-1" max="255" value="-1" oninput="update()">
+			<span id="ts-value"></span>
+		</div>
+	</div>
+</div>
+
+<center>
+	<canvas id="canvas" width="0" height="0" style="max-width: 80%; max-height: 600px"></canvas>
+</center>
+
+<hr>
+
+<p>
+Sample images (click to load):
+</p>
+
+<figure class="figure mx-4">
+	<img src="https://upload.wikimedia.org/wikipedia/commons/a/a8/Steganography_original.png?1547004448255" crossorigin="Anonymous" onclick="window.image = this; update()">
+	<figcaption class="figure-caption">Tree/cat LSB, <a href="https://en.wikipedia.org/wiki/Steganography">Wikipedia</a></figcaption>
+</figure>
+
+<figure class="figure mx-4">
+	<img src="https://ctfs.github.io/resources/topics/steganography/invisible-text/example.png" crossorigin="Anonymous" onclick="window.image = this; update()" width="200">
+	<figcaption class="figure-caption">Transparency hiding text, <a href="https://ctfs.github.io/resources/topics/steganography/invisible-text/README.html">CTF Resources</a></figcaption>
+</figure>
+
+<!-- code below -->
+
+<script>
+
+function getImage(input) {
+	let reader = new FileReader();
+	let file = input.files[0];
+
+	if(!file) {
+		return Promise.reject("no file");
+	}
+
+	let ret = new Promise(function(resolve, reject) {
+		reader.onabort = reader.onerror = (event) => {
+			reject(reader.error);
+		};
+		reader.onload = (event) => {
+			let img = new Image();
+			img.onload = () => {
+				resolve(img);
+			}
+			img.onerror = (err) => {
+				reject(err);
+			}
+			img.src = reader.result;
+		};
+	});
+
+	reader.readAsDataURL(file);
+
+	return ret;
+}
+
+function loadImage() {
+	// it seems like it takes time to process
+	let canvas = document.querySelector('canvas');
+	canvas.width = window.image.naturalWidth;
+	canvas.height = window.image.naturalHeight;
+
+	let ctx = canvas.getContext('2d');
+	ctx.drawImage(window.image, 0, 0);
+}
+
+function applyPixelFilter(filter) {
+	let canvas = document.querySelector('canvas');
+	let ctx = canvas.getContext('2d');
+
+	let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+	let data = imageData.data;
+
+	let swapSB = (x) => (x << (8-n)) & 0xff;
+
+	for(let i = 0; i < data.length; i += 4) {
+		let out = filter(... [0,1,2,3].map(j => data[i+j]));
+		for(let j = 0; j < 4; ++j) {
+			data[i + j] = out[j];
+		}
+	}
+	ctx.putImageData(imageData, 0, 0);
+}
+
+function showLSB(n) {
+	let swapSB = (x) => (x << (8-n)) & 0xff;
+	applyPixelFilter((r,g,b,a) => [...[r,g,b].map(swapSB), a]);
+}
+
+function transSub(n) {
+	applyPixelFilter((r,g,b,a) => a < n ? [ 0xff, 0, 0, 0xff ] : a > n ? [0, 0xff, 0, 0xff ] : [0, 0, 0xff, 0xff ]);
+}
+
+function update() {
+	let lsbAmount = parseInt(document.querySelector('input#lsb').value);
+	document.querySelector('span#lsb-value').innerHTML = lsbAmount;
+
+	let tsAmount = parseInt(document.querySelector('input#ts').value);
+	document.querySelector('span#ts-value').innerHTML = tsAmount >= 0 ? tsAmount : "Not applied";
+
+	console.log(lsbAmount, tsAmount);
+
+	if(window.image !== null) {
+		loadImage();
+		if(tsAmount >= 0) {
+			transSub(tsAmount);
+		}
+		showLSB(lsbAmount);
+	}
+}
+
+function load(element) {
+	getImage(element).then((image) => {
+		window.image = image;
+		update();
+	});
+}
+
+image = null;
+update();
+
+</script>
+
+</article>
+
+<nav class="post-nav flex-distribute my-1">
+	
+		<span class="prev nav-empty"></span>
+	
+
+	
+		<a class="next" href="/interactives/fenwick-tree">Fenwick Trees &raquo;</a>
+	
+</nav>
+
+
+		</main>
+
+		<div id="site-footer" class="content-width text-centre">
+		<ul class="li-flat mt-0">
+			<li><a href="/everything">everything</a></li>
+			<li><a href="/booklist">reading list</a></li>
+		</ul>
+		All work licensed under <b>CC BY-SA 4.0</b> unless otherwise stated.
+		<br>
+		This site is <a href="https://github.com/ralismark/ralismark.github.io">open source</a>!
+</div>
+
+	</body>
+</html>

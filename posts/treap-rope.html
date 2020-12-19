@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>Rope-Making With Treaps - ralismark</title>
+
+<!--[if lt IE 9]>
+	<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv='X-UA-Compatible' content='IE=edge'>
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link rel="canonical" href="/posts/treap-rope">
+<meta name="description" content="Building treap ropes from first principles">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/logo-32.png">
+
+<link type="application/atom+xml" rel="alternate" href="/feed.xml" title="ralismark" />
+
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+
+<!-- experiment: indieweb -->
+<link rel="webmention" href="https://webmention.io/www.ralismark.xyz/webmention" />
+<link rel="pingback" href="https://webmention.io/www.ralismark.xyz/xmlrpc" />
+
+	</head>
+	<body>
+		<header id="site-nav" class="full-width text-inverted">
+	<nav class="content-width flex-distribute">
+		<a id="navbar-root" href="/">ralismark</a>
+
+		
+
+		<ul id="navbar-pages" class="list-inline my-0">
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li class="navbar-page">
+				<a class="navbar-link" href="/posts">
+					Blog
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+		</ul>
+	</nav>
+</header>
+
+
+		<main class="content-width my-2 h-entry">
+			<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/posts/inline-notes">&laquo; Inline sidenotes</a>
+	
+
+	
+		<span class="next nav-empty"></span>
+	
+</nav>
+
+
+<header class="post-meta fenced-b mb-1 text-centre bleed">
+	<h1 id="post-title" class="p-name">Rope-Making With Treaps</h1>
+	<p class="p-summary"><em>
+		Building treap ropes from first principles
+	</em></p>
+	<ul class="li-flat">
+		<li>
+		<time datetime="2020-11-29T00:00:00-06:00" class="dt-published">
+			<a class="u-url" href="/posts/treap-rope">
+			29 November 2020
+			</a>
+		</time>
+		</li>
+
+		<li>
+			
+			<abbr title="1379 total words">7 mins to read</abbr>
+		</li>
+
+		
+		
+		<li id="post-tags">
+			<span id="post-tag-label">Tags:</span>
+			
+				<a class="p-category badge" href="/tags#informatics">informatics</a>
+			
+		</li>
+		
+	</p>
+</header>
+
+<article class="post-content e-content bounded">
+	<p>Treaps are a very neat data structure that I’ve grown fond of. Though they are a <a href="https://en.wikipedia.org/wiki/Self-balancing_binary_search_tree">self-balancing binary search tree</a>, they differ from most other variants in that they can do much more than just store key-value pairs – they can become <em><a href="https://en.wikipedia.org/wiki/Rope_(data_structure)">ropes</a></em>.</p>
+
+<!--more-->
+
+<p>Like dictionaries, <a href="https://en.wikipedia.org/wiki/Rope_(data_structure)">ropes</a> fall under the category of <a href="https://en.wikipedia.org/wiki/Abstract_data_type">abstract data types</a>, but that’s where the similarities end. They extend arrays with the two new abilities beyond indexing:</p>
+
+<ol>
+  <li>Join (i.e. concatenate) two ropes into a single one</li>
+  <li>Split a rope at a point into two halves</li>
+</ol>
+
+<p>Of course, this can be implemented using either linked lists or dynamic arrays, but both have time complexity trade-offs.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th> </th>
+      <th>Access</th>
+      <th>Join</th>
+      <th>Split</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Linked List</td>
+      <td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><mi>n</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span></td>
+      <td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><mn>1</mn><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mord">1</span><span class="mclose">)</span></span></span></span></td>
+      <td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><mn>1</mn><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mord">1</span><span class="mclose">)</span></span></span></span></td>
+    </tr>
+    <tr>
+      <td>Dynamic Array</td>
+      <td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><mn>1</mn><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mord">1</span><span class="mclose">)</span></span></span></span></td>
+      <td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><mi>n</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span></td>
+      <td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><mi>n</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span></td>
+    </tr>
+    <tr>
+      <td>Treap</td>
+      <td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><mi>log</mi><mo>&#x2061;</mo><mi>n</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(\log n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mop">lo<span style="margin-right:0.01389em;">g</span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span></td>
+      <td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><mi>log</mi><mo>&#x2061;</mo><mi>n</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(\log n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mop">lo<span style="margin-right:0.01389em;">g</span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span></td>
+      <td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><mi>log</mi><mo>&#x2061;</mo><mi>n</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(\log n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mop">lo<span style="margin-right:0.01389em;">g</span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Treaps are a nice middle ground, with <em>expected</em> <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><mi>log</mi><mo>&#x2061;</mo><mi>n</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(\log n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mop">lo<span style="margin-right:0.01389em;">g</span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span> (because of their probabilistic nature) for all operations.</p>
+
+<h2 id="cartesian-trees"><a href="#cartesian-trees">Cartesian Trees</a></h2>
+
+<p>Almost all the machinery for treaps are built on top of <a href="https://en.wikipedia.org/wiki/Cartesian_tree">Cartesian trees</a>, so we’ll look at those first. Formally, they are binary trees derived from a sequence of numbers, and satisfy two properties:</p>
+
+<!-- that last sentence is kinda bad -->
+
+<ol>
+  <li>An <a href="https://en.wikipedia.org/wiki/Tree_traversal#In-order_(LNR)">in-order</a> traversal gives the original sequence (like other binary search trees)</li>
+  <li>Each node’s value is not larger than its children’s – this is also known as the <a href="https://en.wikipedia.org/wiki/Heap_(data_structure)">heap</a> property</li>
+</ol>
+
+<p><img src="https://upload.wikimedia.org/wikipedia/commons/d/d5/Cartesian_tree.svg" alt="&quot;Cartesian tree&quot;" /></p>
+
+<p><em>Cartesian Tree. Source: <a href="https://en.wikipedia.org/wiki/Cartesian_tree#/media/File:Cartesian_tree.svg">wikipedia</a></em></p>
+
+<p>While you can convert a list of numbers into a Cartesian tree, we won’t need to – just join a bunch of single-element trees to do the same thing.</p>
+
+<h2 id="join"><a href="#join">Join</a></h2>
+
+<p>The first operation we’ll tackle is joining. Lets suppose we have two trees we want to join. The final tree will need to satisfy the heap property, so the root node must be the smallest element out of both trees. Fortunately, since the original trees satisfy the heap property, we know the smallest overall element must be one of the two root nodes.</p>
+
+<p>We’ll assume the left root is smaller – we can just mirror our final algorithm if the right root was actually greater. Here’s an example:</p>
+
+<svg xmlns="http://www.w3.org/2000/svg" width="316pt" height="286pt" viewBox="0.00 0.00 315.80 285.89">
+  <g class="graph" transform="scale(1 1) rotate(0) translate(4 281.89)">
+    <title>%3</title>
+    <g class="node">
+      <title>1</title>
+      <ellipse fill="none" stroke="#99ee99" cx="72" cy="-259.89" rx="18" ry="18" />
+      <text text-anchor="middle" x="72" y="-256.19" font-family="Times,serif" font-size="14.00">1</text>
+    </g>
+    <g class="node">
+      <title>3</title>
+      <ellipse fill="none" stroke="#ff9999" cx="45" cy="-185.09" rx="18" ry="18" />
+      <text text-anchor="middle" x="45" y="-181.39" font-family="Times,serif" font-size="14.00">3</text>
+    </g>
+    <g class="edge">
+      <title>1-&gt;3</title>
+      <path fill="none" stroke="black" d="M66.01,-242.73C62.62,-233.59 58.3,-221.95 54.46,-211.6" />
+      <polygon fill="black" stroke="black" points="57.73,-210.36 50.98,-202.2 51.17,-212.79 57.73,-210.36" />
+    </g>
+    <g class="node">
+      <title>8</title>
+      <ellipse fill="none" stroke="#ff9999" cx="99" cy="-185.09" rx="18" ry="18" />
+      <text text-anchor="middle" x="99" y="-181.39" font-family="Times,serif" font-size="14.00">8</text>
+    </g>
+    <g class="edge">
+      <title>1-&gt;8</title>
+      <path fill="none" stroke="black" d="M77.99,-242.73C81.38,-233.59 85.7,-221.95 89.54,-211.6" />
+      <polygon fill="black" stroke="black" points="92.83,-212.79 93.02,-202.2 86.27,-210.36 92.83,-212.79" />
+    </g>
+    <g class="node">
+      <title>9</title>
+      <ellipse fill="none" stroke="#ff9999" cx="18" cy="-102.94" rx="18" ry="18" />
+      <text text-anchor="middle" x="18" y="-99.24" font-family="Times,serif" font-size="14.00">9</text>
+    </g>
+    <g class="edge">
+      <title>3-&gt;9</title>
+      <path fill="none" stroke="black" d="M39.54,-167.87C35.84,-156.9 30.88,-142.18 26.65,-129.63" />
+      <polygon fill="black" stroke="black" points="29.97,-128.5 23.46,-120.14 23.33,-130.73 29.97,-128.5" />
+    </g>
+    <g class="node">
+      <title>7</title>
+      <ellipse fill="none" stroke="#ff9999" cx="72" cy="-102.94" rx="18" ry="18" />
+      <text text-anchor="middle" x="72" y="-99.24" font-family="Times,serif" font-size="14.00">7</text>
+    </g>
+    <g class="edge">
+      <title>3-&gt;7</title>
+      <path fill="none" stroke="black" d="M50.46,-167.87C54.16,-156.9 59.12,-142.18 63.35,-129.63" />
+      <polygon fill="black" stroke="black" points="66.67,-130.73 66.54,-120.14 60.03,-128.5 66.67,-130.73" />
+    </g>
+    <g class="node">
+      <title>12</title>
+      <ellipse fill="none" stroke="#ff9999" cx="129" cy="-102.94" rx="20.6" ry="20.6" />
+      <text text-anchor="middle" x="129" y="-99.24" font-family="Times,serif" font-size="14.00">12</text>
+    </g>
+    <g class="edge">
+      <title>8-&gt;12</title>
+      <path fill="none" stroke="black" d="M105.07,-167.87C108.9,-157.65 113.94,-144.18 118.41,-132.23" />
+      <polygon fill="black" stroke="black" points="121.76,-133.26 121.99,-122.67 115.21,-130.81 121.76,-133.26" />
+    </g>
+    <g class="node">
+      <title>10</title>
+      <ellipse fill="none" stroke="#9999ff" cx="225" cy="-185.09" rx="20.6" ry="20.6" />
+      <text text-anchor="middle" x="225" y="-181.39" font-family="Times,serif" font-size="14.00">10</text>
+    </g>
+    <g class="node">
+      <title>15</title>
+      <ellipse fill="none" stroke="#9999ff" cx="257" cy="-102.94" rx="20.6" ry="20.6" />
+      <text text-anchor="middle" x="257" y="-99.24" font-family="Times,serif" font-size="14.00">15</text>
+    </g>
+    <g class="edge">
+      <title>10-&gt;15</title>
+      <path fill="none" stroke="black" d="M232.42,-165.5C236.42,-155.49 241.43,-142.93 245.89,-131.78" />
+      <polygon fill="black" stroke="black" points="249.16,-133.02 249.62,-122.43 242.66,-130.42 249.16,-133.02" />
+    </g>
+    <g class="node">
+      <title>5</title>
+      <ellipse fill="none" stroke="#9999ff" cx="255" cy="-259.89" rx="18" ry="18" />
+      <text text-anchor="middle" x="255" y="-256.19" font-family="Times,serif" font-size="14.00">5</text>
+    </g>
+    <g class="edge">
+      <title>5-&gt;10</title>
+      <path fill="none" stroke="black" d="M248.49,-243.09C245,-234.62 240.6,-223.94 236.55,-214.11" />
+      <polygon fill="black" stroke="black" points="239.71,-212.6 232.66,-204.69 233.24,-215.27 239.71,-212.6" />
+    </g>
+    <g class="node">
+      <title>20</title>
+      <ellipse fill="none" stroke="#9999ff" cx="227" cy="-20.8" rx="20.6" ry="20.6" />
+      <text text-anchor="middle" x="227" y="-17.1" font-family="Times,serif" font-size="14.00">20</text>
+    </g>
+    <g class="edge">
+      <title>15-&gt;20</title>
+      <path fill="none" stroke="black" d="M249.89,-82.95C246.23,-73.17 241.69,-61.05 237.62,-50.18" />
+      <polygon fill="black" stroke="black" points="240.84,-48.79 234.06,-40.66 234.29,-51.25 240.84,-48.79" />
+    </g>
+    <g class="node">
+      <title>18</title>
+      <ellipse fill="none" stroke="#9999ff" cx="287" cy="-20.8" rx="20.6" ry="20.6" />
+      <text text-anchor="middle" x="287" y="-17.1" font-family="Times,serif" font-size="14.00">18</text>
+    </g>
+    <g class="edge">
+      <title>15-&gt;18</title>
+      <path fill="none" stroke="black" d="M264.11,-82.95C267.77,-73.17 272.31,-61.05 276.38,-50.18" />
+      <polygon fill="black" stroke="black" points="279.71,-51.25 279.94,-40.66 273.16,-48.79 279.71,-51.25" />
+    </g>
+  </g>
+</svg>
+
+<p>Since the in-order traversal of the output must go through the entire left tree before going through the right, we know that 1’s left subtree doesn’t change. The right side is different though. If 8 remains the right child, we’ll break the heap rule. So we detach it.</p>
+
+<svg xmlns="http://www.w3.org/2000/svg" width="355pt" height="363pt" viewBox="0.00 0.00 354.80 363.48">
+  <g class="graph" transform="scale(1 1) rotate(0) translate(4 359.48)">
+    <title>%3</title>
+    <g class="node">
+      <title>1</title>
+      <ellipse fill="none" stroke="#99ee99" cx="73" cy="-337.48" rx="18" ry="18" />
+      <text text-anchor="middle" x="73" y="-333.78" font-family="Times,serif" font-size="14.00">1</text>
+    </g>
+    <g class="node">
+      <title>3</title>
+      <ellipse fill="none" stroke="#99ee99" cx="45" cy="-262.69" rx="18" ry="18" />
+      <text text-anchor="middle" x="45" y="-258.99" font-family="Times,serif" font-size="14.00">3</text>
+    </g>
+    <g class="edge">
+      <title>1-&gt;3</title>
+      <path fill="none" stroke="black" d="M66.79,-320.33C63.27,-311.19 58.79,-299.55 54.81,-289.2" />
+      <polygon fill="black" stroke="black" points="58.05,-287.87 51.2,-279.8 51.52,-290.39 58.05,-287.87" />
+    </g>
+    <g class="node">
+      <title>8</title>
+      <ellipse fill="none" stroke="#ff9999" cx="159" cy="-262.69" rx="18" ry="18" />
+      <text text-anchor="middle" x="159" y="-258.99" font-family="Times,serif" font-size="14.00">8</text>
+    </g>
+    <g class="node">
+      <title>5</title>
+      <ellipse fill="none" stroke="#9999ff" cx="294" cy="-262.69" rx="18" ry="18" />
+      <text text-anchor="middle" x="294" y="-258.99" font-family="Times,serif" font-size="14.00">5</text>
+    </g>
+    <g class="node">
+      <title>9</title>
+      <ellipse fill="none" stroke="#99ee99" cx="18" cy="-185.09" rx="18" ry="18" />
+      <text text-anchor="middle" x="18" y="-181.39" font-family="Times,serif" font-size="14.00">9</text>
+    </g>
+    <g class="edge">
+      <title>3-&gt;9</title>
+      <path fill="none" stroke="black" d="M39.14,-245.28C35.65,-235.51 31.14,-222.89 27.19,-211.81" />
+      <polygon fill="black" stroke="black" points="30.41,-210.44 23.75,-202.2 23.82,-212.8 30.41,-210.44" />
+    </g>
+    <g class="node">
+      <title>7</title>
+      <ellipse fill="none" stroke="#99ee99" cx="72" cy="-185.09" rx="18" ry="18" />
+      <text text-anchor="middle" x="72" y="-181.39" font-family="Times,serif" font-size="14.00">7</text>
+    </g>
+    <g class="edge">
+      <title>3-&gt;7</title>
+      <path fill="none" stroke="black" d="M50.86,-245.28C54.35,-235.51 58.86,-222.89 62.81,-211.81" />
+      <polygon fill="black" stroke="black" points="66.18,-212.8 66.25,-202.2 59.59,-210.44 66.18,-212.8" />
+    </g>
+    <g class="node">
+      <title>12</title>
+      <ellipse fill="none" stroke="#ff9999" cx="204" cy="-185.09" rx="20.6" ry="20.6" />
+      <text text-anchor="middle" x="204" y="-181.39" font-family="Times,serif" font-size="14.00">12</text>
+    </g>
+    <g class="edge">
+      <title>8-&gt;12</title>
+      <path fill="none" stroke="black" d="M167.89,-246.75C173.75,-236.9 181.59,-223.74 188.46,-212.2" />
+      <polygon fill="black" stroke="black" points="191.6,-213.76 193.71,-203.38 185.59,-210.18 191.6,-213.76" />
+    </g>
+    <g class="node">
+      <title>10</title>
+      <ellipse fill="none" stroke="#9999ff" cx="264" cy="-185.09" rx="20.6" ry="20.6" />
+      <text text-anchor="middle" x="264" y="-181.39" font-family="Times,serif" font-size="14.00">10</text>
+    </g>
+    <g class="node">
+      <title>15</title>
+      <ellipse fill="none" stroke="#9999ff" cx="296" cy="-102.94" rx="20.6" ry="20.6" />
+      <text text-anchor="middle" x="296" y="-99.24" font-family="Times,serif" font-size="14.00">15</text>
+    </g>
+    <g class="edge">
+      <title>10-&gt;15</title>
+      <path fill="none" stroke="black" d="M271.42,-165.5C275.42,-155.49 280.43,-142.93 284.89,-131.78" />
+      <polygon fill="black" stroke="black" points="288.16,-133.02 288.62,-122.43 281.66,-130.42 288.16,-133.02" />
+    </g>
+    <g class="edge">
+      <title>5-&gt;10</title>
+      <path fill="none" stroke="black" d="M287.64,-245.65C284,-236.5 279.34,-224.75 275.12,-214.11" />
+      <polygon fill="black" stroke="black" points="278.35,-212.77 271.41,-204.76 271.85,-215.35 278.35,-212.77" />
+    </g>
+    <g class="node">
+      <title>20</title>
+      <ellipse fill="none" stroke="#9999ff" cx="266" cy="-20.8" rx="20.6" ry="20.6" />
+      <text text-anchor="middle" x="266" y="-17.1" font-family="Times,serif" font-size="14.00">20</text>
+    </g>
+    <g class="edge">
+      <title>15-&gt;20</title>
+      <path fill="none" stroke="black" d="M288.89,-82.95C285.23,-73.17 280.69,-61.05 276.62,-50.18" />
+      <polygon fill="black" stroke="black" points="279.84,-48.79 273.06,-40.66 273.29,-51.25 279.84,-48.79" />
+    </g>
+    <g class="node">
+      <title>18</title>
+      <ellipse fill="none" stroke="#9999ff" cx="326" cy="-20.8" rx="20.6" ry="20.6" />
+      <text text-anchor="middle" x="326" y="-17.1" font-family="Times,serif" font-size="14.00">18</text>
+    </g>
+    <g class="edge">
+      <title>15-&gt;18</title>
+      <path fill="none" stroke="black" d="M303.11,-82.95C306.77,-73.17 311.31,-61.05 315.38,-50.18" />
+      <polygon fill="black" stroke="black" points="318.71,-51.25 318.94,-40.66 312.16,-48.79 318.71,-51.25" />
+    </g>
+  </g>
+</svg>
+
+<p>The correct child would be the smaller one, but we’d need to merge <em>their</em> subtrees. This is same kind of problem we’re trying to solve in the first place, so recursion is the way to go. This gives us the full join algorithm:</p>
+
+<ol>
+  <li>Firstly, finds the smaller root node and sets it as the root of the output.</li>
+  <li>Then, recursively merges the other tree with the subtree on the same side – that’s blue with red in the example.</li>
+</ol>
+
+<p>And that’s it!</p>
+
+<h2 id="split"><a href="#split">Split</a></h2>
+
+<p>The other operation we need to support is splitting. Let’s bring back the wikipedia example:</p>
+
+<p><img src="https://upload.wikimedia.org/wikipedia/commons/d/d5/Cartesian_tree.svg" alt="&quot;Cartesian tree&quot;" /></p>
+
+<p><em>Cartesian Tree. Source: <a href="https://en.wikipedia.org/wiki/Cartesian_tree#/media/File:Cartesian_tree.svg">wikipedia</a></em></p>
+
+<p>Suppose we want to split this tree between 10 and 20. The first problem is that there are 3 edges between the two sides of the split: 1-5, 5-8, and 10-15. No worries – we’ll just erase them. But this leaves us with <em>too</em> many components.</p>
+
+<p>Now, we could use the join algorithm we just made. But let’s take a step back. Suppose we could efficiently determine, for any node, which side the split was on. With this, we could determine whether the split is in the <em>left or right subtree</em>. We’ll tell that subtree, if it exists, to split itself (recursively), and replace it with the half that was on our side of the split<sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote">1</a></sup>.</p>
+
+<p>This gives us the full splitting algorithm:</p>
+
+<ol>
+  <li>Determine which side of the root the split is on</li>
+  <li>Split the subtree on that side, if it exists</li>
+  <li>Reattach the closer half to the root</li>
+</ol>
+
+<p>However, we’ve assumed that we can easily determine which side the split is on. I’ll admit this is bit of a cop-out, since it isn’t even possible with plain Cartesian trees, but it’ll be easy to support when we actually make our treap.</p>
+
+<h2 id="complexity"><a href="#complexity">Complexity</a></h2>
+
+<p>Both of our algorithms run in <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><mi>d</mi><mi>e</mi><mi>p</mi><mi>t</mi><mi>h</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(depth)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mord mathnormal">d</span><span class="mord mathnormal">e</span><span class="mord mathnormal">p</span><span class="mord mathnormal">t</span><span class="mord mathnormal">h</span><span class="mclose">)</span></span></span></span>. This looks great until you realise it’s valid for a Cartesian tree to be a <em>linked list</em>. Which makes the worst case complexity <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><mi>n</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span>.</p>
+
+<p>Now, the obvious solution would be to require the tree be balanced. How to achieve this without tacking on <em>another</em> <a href="https://en.wikipedia.org/wiki/Self-balancing_binary_search_tree">self-balancing binary search tree</a> is less obvious.</p>
+
+<p>Treaps solve this is by exploiting two theorems<sup id="fnref:2" role="doc-noteref"><a href="#fn:2" class="footnote">2</a></sup>:</p>
+
+<ol>
+  <li><a href="https://en.wikipedia.org/wiki/Random_binary_tree">Random binary trees</a> are, <a href="https://en.wikipedia.org/wiki/With_high_probability">With High Probability</a><sup id="fnref:3" role="doc-noteref"><a href="#fn:3" class="footnote">3</a></sup>, balanced.</li>
+  <li>Cartesian trees generated from arrays of random numbers are uniformly random.</li>
+</ol>
+
+<p>By using random numbers for the Cartesian tree, we ensure our operations are almost always <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><mi>log</mi><mo>&#x2061;</mo><mi>n</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(\log n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mop">lo<span style="margin-right:0.01389em;">g</span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span> i.e. fast. However, we’ve lost the ability to store anything useful. To remedy this, we attach an <em>additional</em> value to each node (and call the random numbers the nodes’ <em>priority</em>, to avoid confusion). Since the value can change independently to the priority, we can allow updating it in-place.</p>
+
+<p>Or, we can forbid it. Since each node only ever knows about its subtree, we can update by instead by splitting out the element, cloning it, then joining the pieces back together.</p>
+
+<p>This last fact is way more useful than it sounds. If we enforce immutability, we can store <em>any</em> aggregate statistic <em>as long as it doesn’t depend on things outside its subtree</em>. This permits “summaries” like</p>
+
+<ul>
+  <li>total length – a node’s length is one plus the sum of its children’s lengths</li>
+  <li>line count – store the number of newline characters</li>
+  <li><em>other</em> treaps computed from this treap (with an additional <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>log</mi><mo>&#x2061;</mo><mi>n</mi></mrow><annotation encoding="application/x-tex">\log n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8888799999999999em;vertical-align:-0.19444em;"></span><span class="mop">lo<span style="margin-right:0.01389em;">g</span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal">n</span></span></span></span> factor to the complexity)</li>
+  <li>well, <em>any</em> monoid or semigroup<sup id="fnref:4" role="doc-noteref"><a href="#fn:4" class="footnote">4</a></sup> (i.e. you’re using an associative binary operator)</li>
+</ul>
+
+<p>to be calculated efficiently – expected <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><mi>log</mi><mo>&#x2061;</mo><mi>n</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(\log n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mop">lo<span style="margin-right:0.01389em;">g</span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span>, as well.</p>
+
+<h2 id="actually-split"><a href="#actually-split">Actually Split</a></h2>
+
+<p>Still, we haven’t solved our assumption for splitting: that we can determine which side of each node the split is on.</p>
+
+<p>For now, we’ll restrict our split function to only take the split-point as an index. Now, notice that this index will be on the left of the root <em>if and only if</em> it’s not larger than the size of the left subtree. By tracking the size of each subtree, we’ll satisfy our promise of an efficient response. This’ll also allow us to <em>index</em> our nodes, which is really important.</p>
+
+<p>In fact, you can use stranger split-point conditions, such as “before the first element which satisfies this predicate”, by storing special summary information in each node. What information to store is left as an exercise to the reader.</p>
+
+<h2 id="summary"><a href="#summary">Summary</a></h2>
+
+<p>And with that, we have a fully functional <em>rope</em>. You can store sequences of any type, join them, split them, index them, even summarise them. You <em>can</em> adapt this into a dictionary by bolting on a binary search to a split function, but why would you – there’s way better ways of doing it.</p>
+
+<p>The fast <em>summaries</em> – <code class="language-plaintext highlighter-rouge">foldMap</code>, if you’re familiar with Haskell – are a lesser-known superpower of treaps (and ropes in general). With the right setup, you can achieve advanced behaviour including <a href="https://xi-editor.io/docs/rope_science_05.html">word wrap</a> and <a href="https://xi-editor.io/docs/rope_science_04.html">parenthesis matching</a> – if you’re interested (like me), have a read of the <a href="https://xi-editor.io/docs/rope_science_00.html">Rope Science series in the Xi editor docs</a>.</p>
+
+<p>As an additional note, some other binary search trees also support join &amp; split. <a href="https://en.wikipedia.org/wiki/Join-based_tree_algorithms">Wikipedia has a page on it</a> which goes through a few other operations, but treaps are by still far the simplest.</p>
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:1" role="doc-endnote">
+      <p>I intended to including a visual for this. Unfortunately, making these trees with GraphViz is a real pain. Forcing the nodes to stay in the right place requires tangling up the graph with a lot of invisible edges and nodes. <a href="#fnref:1" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:2" role="doc-endnote">
+      <p>I don’t know how either of these are proven. Sorry. <a href="#fnref:2" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:3" role="doc-endnote">
+      <p>To mathematicians, this means that the probability tends towards 1 as the size of the tree goes to infinity. <a href="#fnref:3" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:4" role="doc-endnote">
+      <p>Await a possible future post where I talk extensively about interesting things you can do with monoids. <a href="#fnref:4" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+  </ol>
+</div>
+
+</article>
+
+<nav class="post-nav flex-distribute my-1">
+	
+		<a class="prev" href="/posts/inline-notes">&laquo; Inline sidenotes</a>
+	
+
+	
+		<span class="next nav-empty"></span>
+	
+</nav>
+
+
+		</main>
+
+		<div id="site-footer" class="content-width text-centre">
+		<ul class="li-flat mt-0">
+			<li><a href="/everything">everything</a></li>
+			<li><a href="/booklist">reading list</a></li>
+		</ul>
+		All work licensed under <b>CC BY-SA 4.0</b> unless otherwise stated.
+		<br>
+		This site is <a href="https://github.com/ralismark/ralismark.github.io">open source</a>!
+</div>
+
+	</body>
+</html>

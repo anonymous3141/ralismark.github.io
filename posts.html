@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>Blog - ralismark</title>
+
+<!--[if lt IE 9]>
+	<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv='X-UA-Compatible' content='IE=edge'>
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link rel="canonical" href="/posts">
+<meta name="description" content="Posts RSS Tags Rope-Making With Treaps 29 Nov &#39;20 Building treap ropes from first principles Inline sidenotes 20 Nov &#39;20 A neat css-only inline note Wacky Ke...">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/logo-32.png">
+
+<link type="application/atom+xml" rel="alternate" href="/feed.xml" title="ralismark" />
+
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/assets/main.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+
+<!-- experiment: indieweb -->
+<link rel="webmention" href="https://webmention.io/www.ralismark.xyz/webmention" />
+<link rel="pingback" href="https://webmention.io/www.ralismark.xyz/xmlrpc" />
+
+	</head>
+	<body>
+		<header id="site-nav" class="full-width text-inverted">
+	<nav class="content-width flex-distribute">
+		<a id="navbar-root" href="/">ralismark</a>
+
+		
+
+		<ul id="navbar-pages" class="list-inline my-0">
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<li class="navbar-page">
+				<a class="navbar-link" href="/posts">
+					Blog
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+		</ul>
+	</nav>
+</header>
+
+
+		<main class="content-width my-2 ">
+			
+
+
+
+<h1>Posts</h1>
+
+<!-- icons from https://github.com/tabler/tabler-icons -->
+<ul class="list-inline fenced-y flex-centred">
+	<li><a href="/feed.xml">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display: inline; height: 1.1em; vertical-align: text-top">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <circle cx="5" cy="19" r="1" />
+  <path d="M4 4a16 16 0 0 1 16 16" />
+  <path d="M4 11a9 9 0 0 1 9 9" />
+</svg>
+RSS</a></li>
+	<li><a href="/tags">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display: inline; height: 1.1em; vertical-align: text-top">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M11 3l9 9a1.5 1.5 0 0 1 0 2l-6 6a1.5 1.5 0 0 1 -2 0l-9 -9v-4a4 4 0 0 1 4 -4h4" />
+  <circle cx="9" cy="9" r="2" />
+</svg>
+Tags</a></li>
+</ul>
+
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/treap-rope">Rope-Making With Treaps</a>
+		</h2>
+
+		<time datetime="2020-11-29T00:00:00-06:00">
+			29 Nov '20
+		</time>
+	</header>
+
+	<p class="my-0">
+	Building treap ropes from first principles
+	</p>
+</article>
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/inline-notes">Inline sidenotes</a>
+		</h2>
+
+		<time datetime="2020-11-20T00:00:00-06:00">
+			20 Nov '20
+		</time>
+	</header>
+
+	<p class="my-0">
+	A neat css-only inline note
+	</p>
+</article>
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/keyboard">Wacky Keyboard Mods</a>
+		</h2>
+
+		<time datetime="2020-11-15T00:00:00-06:00">
+			15 Nov '20
+		</time>
+	</header>
+
+	<p class="my-0">
+	What you can achieve if you abandon keyboard conventions
+	</p>
+</article>
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/blog-ci">Blog CI</a>
+		</h2>
+
+		<time datetime="2020-10-28T00:00:00-05:00">
+			28 Oct '20
+		</time>
+	</header>
+
+	<p class="my-0">
+	Using github CI to deploy to github pages.
+	</p>
+</article>
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/blog-style">Blog Post Style</a>
+		</h2>
+
+		<time datetime="2020-10-16T00:00:00-05:00">
+			16 Oct '20
+		</time>
+	</header>
+
+	<p class="my-0">
+	Shorter and less-polished content in the future?
+	</p>
+</article>
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/how-i-use-vim-1">How I Use Vim (part 1)</a>
+		</h2>
+
+		<time datetime="2020-08-29T00:00:00-05:00">
+			29 Aug '20
+		</time>
+	</header>
+
+	<p class="my-0">
+	Interesting aspects of my vim usage
+	</p>
+</article>
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/binary-search">You don&#39;t know binary search</a>
+		</h2>
+
+		<time datetime="2020-07-04T00:00:00-05:00">
+			 4 Jul '20
+		</time>
+	</header>
+
+	<p class="my-0">
+	How to never write a binary search wrong again
+	</p>
+</article>
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/small-merge">Small Merge</a>
+		</h2>
+
+		<time datetime="2020-04-21T00:00:00-05:00">
+			21 Apr '20
+		</time>
+	</header>
+
+	<p class="my-0">
+	A generalisation of DSU's merge by size to be more useful.
+	</p>
+</article>
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/alberts-lis">Short and simple LIS</a>
+		</h2>
+
+		<time datetime="2020-04-21T00:00:00-05:00">
+			21 Apr '20
+		</time>
+	</header>
+
+	<p class="my-0">
+	O(n log n) Longest Increasing Subsequence in just 7 lines
+	</p>
+</article>
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/nearer-optimal-solution">Proving Algorithms using Nearer Optimal Solution</a>
+		</h2>
+
+		<time datetime="2020-03-10T00:00:00-05:00">
+			10 Mar '20
+		</time>
+	</header>
+
+	<p class="my-0">
+	Proving greedy algorithms by making optimal choices more greedy
+	</p>
+</article>
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/edge-trees">Edge-based tree data structures</a>
+		</h2>
+
+		<time datetime="2019-05-28T00:00:00-05:00">
+			28 May '19
+		</time>
+	</header>
+
+	<p class="my-0">
+	A novel data structure to solve widest path problems
+	</p>
+</article>
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/speed-of-light">A simple &quot;derivation&quot; of the speed of light</a>
+		</h2>
+
+		<time datetime="2019-04-05T00:00:00-05:00">
+			 5 Apr '19
+		</time>
+	</header>
+
+	<p class="my-0">
+	Deriving an expression for c without advanced vector calculus
+	</p>
+</article>
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/bluehid-3">BlueHID Details, part 3 - Finally, controls!</a>
+		</h2>
+
+		<time datetime="2019-01-13T00:00:00-06:00">
+			13 Jan '19
+		</time>
+	</header>
+
+	<p class="my-0">
+	Finally sending inputs over bluetooth
+	</p>
+</article>
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/nice-01-knapsack">A nice subset-sum solution</a>
+		</h2>
+
+		<time datetime="2019-01-07T00:00:00-06:00">
+			 7 Jan '19
+		</time>
+	</header>
+
+	<p class="my-0">
+	Solving a "standard" problem in a very clean way
+	</p>
+</article>
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/bluehid-2">BlueHID Details, part 2 - WTF is a HID descriptor?!</a>
+		</h2>
+
+		<time datetime="2019-01-07T00:00:00-06:00">
+			 7 Jan '19
+		</time>
+	</header>
+
+	<p class="my-0">
+	Figuring out how to make a useful HID descriptor
+	</p>
+</article>
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/bluehid-1">BlueHID Details, part 1 - Oreo Hacks</a>
+		</h2>
+
+		<time datetime="2019-01-04T00:00:00-06:00">
+			 4 Jan '19
+		</time>
+	</header>
+
+	<p class="my-0">
+	Enabling the Bluetooth HID device API on Oreo
+	</p>
+</article>
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/table-mode">Emulating table mode on Casio fx-82AU (and variants)</a>
+		</h2>
+
+		<time datetime="2018-11-07T00:00:00-06:00">
+			 7 Nov '18
+		</time>
+	</header>
+
+	<p class="my-0">
+	Making a table of values by creating a for loop
+	</p>
+</article>
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/git-ep-cleanup">Git Emergency Procedures - Cleaning things up</a>
+		</h2>
+
+		<time datetime="2017-12-19T00:00:00-06:00">
+			19 Dec '17
+		</time>
+	</header>
+
+	<p class="my-0">
+	Resetting the repo to its inital state & deleting extra files
+	</p>
+</article>
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/git-ep-deleted-ref">Git Emergency Procedures - Recovering deleted refs</a>
+		</h2>
+
+		<time datetime="2017-11-30T00:00:00-06:00">
+			30 Nov '17
+		</time>
+	</header>
+
+	<p class="my-0">
+	Recovering commits from deleted branches
+	</p>
+</article>
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/stateless-brachistochrone">Stateless Brachistochrone Trajectories</a>
+		</h2>
+
+		<time datetime="2017-08-24T00:00:00-05:00">
+			24 Aug '17
+		</time>
+	</header>
+
+	<p class="my-0">
+	Determining if you need to decelerate without remembering where you started
+	</p>
+</article>
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/cpp14-concept-1">Even More Concepts in C++14 (part 1)</a>
+		</h2>
+
+		<time datetime="2017-05-07T00:00:00-05:00">
+			 7 May '17
+		</time>
+	</header>
+
+	<p class="my-0">
+	Implementing concepts in C++14 in under 50 lines
+	</p>
+</article>
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/a-tale-of-indices">A Tale of Indices</a>
+		</h2>
+
+		<time datetime="2017-04-13T00:00:00-05:00">
+			13 Apr '17
+		</time>
+	</header>
+
+	<p class="my-0">
+	Exploting bad indexing code to mess with malloc and the PLT
+	</p>
+</article>
+
+<article class="summary">
+	<header>
+		<h2 class="display-iblock mb-0">
+			
+			<a href="/posts/initial-post">e4ecd8b Initial Post</a>
+		</h2>
+
+		<time datetime="2017-04-11T00:00:00-05:00">
+			11 Apr '17
+		</time>
+	</header>
+
+	<p class="my-0">
+	This is the first post of the (hopefully long-lasting) blog
+	</p>
+</article>
+
+
+		</main>
+
+		<div id="site-footer" class="content-width text-centre">
+		<ul class="li-flat mt-0">
+			<li><a href="/everything">everything</a></li>
+			<li><a href="/booklist">reading list</a></li>
+		</ul>
+		All work licensed under <b>CC BY-SA 4.0</b> unless otherwise stated.
+		<br>
+		This site is <a href="https://github.com/ralismark/ralismark.github.io">open source</a>!
+</div>
+
+	</body>
+</html>
